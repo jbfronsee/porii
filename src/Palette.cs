@@ -76,23 +76,23 @@ class Palette
     /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
     public static List<IMagickColor<byte>> PaletteFromImage(MagickImage image)
     {
-        SortedDictionary<ColorHSV, uint> grouped = new(new ColorHSVComparer());
-        foreach (var color in image.Histogram())
+        SortedDictionary<ColorHSV, uint> histogram = new(new ColorHSVComparer());
+        foreach(var color in image.GetPixels().Select(p => p.ToColor() ?? new MagickColor()))
         {
-            ColorHSV hsv = ColorHSV.FromMagickColor(color.Key) ?? new ColorHSV(0, 0, 0);
+            ColorHSV hsv = ColorHSV.FromMagickColor(color) ?? new ColorHSV(0, 0, 0);
 
             // If the color is within threshold update the max value.
-            if (grouped.ContainsKey(hsv))
+            if (histogram.ContainsKey(hsv))
             {
-                grouped[hsv] += color.Value;
+                histogram[hsv]++;
             }
             else
             {
-                grouped.Add(hsv, color.Value);
+                histogram.Add(hsv, 1);
             }
         }
 
-        var maxes = grouped.OrderByDescending(g => g.Value).Take(16).ToList();
+        var maxes = histogram.OrderByDescending(g => g.Value).Take(16).ToList();
         List<IMagickColor<byte>> palette = new List<IMagickColor<byte>>();
         foreach (var (color, _) in maxes)
         {
