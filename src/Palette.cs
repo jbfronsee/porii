@@ -12,7 +12,7 @@ class Palette
                 return y is not null ? -y.CompareTo(x) : 0;
             }
 
-            if(y is not null)
+            if (y is not null)
             {
                 if (ColorWithinThreshold(x, y))
                 {
@@ -77,7 +77,7 @@ class Palette
     public static List<IMagickColor<byte>> PaletteFromImage(MagickImage image)
     {
         SortedDictionary<ColorHSV, uint> histogram = new(new ColorHSVComparer());
-        foreach(var color in image.GetPixels().Select(p => p.ToColor() ?? new MagickColor()))
+        foreach (var color in image.GetPixels().Select(p => p.ToColor() ?? new MagickColor()))
         {
             ColorHSV hsv = ColorHSV.FromMagickColor(color) ?? new ColorHSV(0, 0, 0);
 
@@ -93,7 +93,7 @@ class Palette
         }
 
         var maxes = histogram.OrderByDescending(g => g.Value).Take(16).ToList();
-        List<IMagickColor<byte>> palette = new List<IMagickColor<byte>>();
+        List<IMagickColor<byte>> palette = [];
         foreach (var (color, _) in maxes)
         {
             palette.Add(color.ToMagickColor());
