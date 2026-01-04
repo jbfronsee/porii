@@ -1,10 +1,12 @@
 using ImageMagick;
 using ImageMagick.Colors;
 
-class Palette
+public class Palette
 {
-    class ColorHSVComparer : IComparer<ColorHSV>
+    private class ColorHSVComparer(Tolerances tolerances) : IComparer<ColorHSV>
     {
+        private Tolerances mTolerances = tolerances;
+
         public int Compare(ColorHSV? x, ColorHSV? y)
         {
             if (x is null)
@@ -14,7 +16,7 @@ class Palette
 
             if (y is not null)
             {
-                if (ColorWithinThreshold(x, y))
+                if (ColorWithinThreshold(x, y, mTolerances))
                 {
                     return 0;
                 }
@@ -31,41 +33,20 @@ class Palette
     /// <param name="color1">First color to compare</param>
     /// <param name="color2">Second color to compare</param>
     /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
-    public static bool ColorWithinThreshold(ColorHSV color1, ColorHSV color2)
+    public static bool ColorWithinThreshold(ColorHSV color1, ColorHSV color2, Tolerances tolerances)
     {
         // Hue is an angular slider that wraps around like a circle.
         double hDegrees1 = color1.Hue * 360;
         double hDegrees2 = color2.Hue * 360;
         double hueDiff = Math.Abs(hDegrees2 - hDegrees1);
+        
+        // Value differences
         double deltaH = Math.Min(360 - hueDiff, hueDiff);
-
         double deltaS = Math.Abs(color2.Saturation - color1.Saturation);
         double deltaV = Math.Abs(color2.Value - color1.Value);
 
-        // Bright value threshold
-        double threshH = 7.2;
-        double threshS = .3;
-        double threshV = .3;
-
-        // Darkest values
-        if(color1.Value < .2)
-        {
-            threshS = 1;
-            threshH = 360;
-        }
-        // Dark values
-        else if(color1.Value > .2 && color1.Value < .4)
-        {
-            threshS = .8;
-            threshH *= 2;
-        }
-        // Midtones
-        if(color1.Value > .4 && color1.Value < .6)
-        {
-            threshS *= 2;
-        }
-
-        return deltaH <= threshH && deltaS <= threshS && deltaV <= threshV;
+        ThresholdHSV thresh = tolerances.GetThreshold(color1.Value);
+        return deltaH <= thresh.Hue && deltaS <= thresh.Saturation && deltaV <= thresh.Value;
     }
 
     /// <summary>
@@ -74,9 +55,9 @@ class Palette
     /// 
     /// <param name="image">The image to create palette from.</param>
     /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
-    public static List<IMagickColor<byte>> PaletteFromImage(MagickImage image)
+    public static List<IMagickColor<byte>> PaletteFromImage(MagickImage image, Tolerances tolerances)
     {
-        SortedDictionary<ColorHSV, uint> histogram = new(new ColorHSVComparer());
+        SortedDictionary<ColorHSV, uint> histogram = new(new ColorHSVComparer(tolerances));
         foreach (var color in image.GetPixels().Select(p => p.ToColor() ?? new MagickColor()))
         {
             ColorHSV hsv = ColorHSV.FromMagickColor(color) ?? new ColorHSV(0, 0, 0);

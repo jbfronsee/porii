@@ -9,7 +9,8 @@ internal class Program
             inputImage.Resize(new Percentage(opts.ResizePercentage));
         }
 
-        List<IMagickColor<byte>> palette = Palette.PaletteFromImage(inputImage);
+        Tolerances tolerances = new();
+        List<IMagickColor<byte>> palette = Palette.PaletteFromImage(inputImage, tolerances);
 
         if (!opts.HistogramOnly)
         {
@@ -105,15 +106,15 @@ internal class Program
 
             GeneratePalette(opts, inputImage);
         } 
-        catch (MagickException me)
+        catch (Exception e)
         {
             if (opts.Verbose)
             {
-                Console.WriteLine(me);
+                Console.WriteLine(e);
             }
             else
             {
-                Console.WriteLine(me.Message);
+                Console.WriteLine(e.Message);
             }
         }
     }

@@ -1,7 +1,7 @@
 using ImageMagick;
 using ImageMagick.Drawing;
 
-class Format
+public class Format
 {
     /// <summary>
     /// Formats palette as a GPL file for importing into software like GIMP and Krita.

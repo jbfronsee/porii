@@ -1,4 +1,4 @@
-class Options
+public class Options
 {
     public static Options GetOptions(string[] args)
     {
