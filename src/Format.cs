@@ -39,9 +39,9 @@ class Format
     /// <param name="name">The name of the File.</param>
     public static MagickImage AsPNG(List<IMagickColor<byte>> palette)
     {
-        MagickImage image = new MagickImage(MagickColors.Transparent, 512, 128);
+        MagickImage image = new(MagickColors.Transparent, 512, 128);
 
-        Drawables canvas = new Drawables();
+        Drawables canvas = new();
 
         double x = 0, y = 0, width = 64, height = 64;
         foreach(IMagickColor<byte> color in palette)
@@ -49,12 +49,11 @@ class Format
             // Define the rectangle's properties
             canvas
                 .StrokeColor(color)
-                .StrokeWidth(2)
                 .FillColor(color)
                 .Rectangle(x, y, x + width, y + height);
 
             x += width;
-            if (x > 512)
+            if (x >= 512)
             {
                 x = 0;
                 y += height;
