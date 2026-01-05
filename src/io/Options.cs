@@ -1,8 +1,8 @@
-class Options
+public class Options
 {
     public static Options GetOptions(string[] args)
     {
-        Options opts = new Options();
+        Options opts = new();
         bool output = false;
         bool resize = false;
         foreach (string arg in args)

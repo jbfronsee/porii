@@ -1,0 +1,48 @@
+using Microsoft.Extensions.Configuration;
+
+public class Config
+{
+    public static ThresholdHSV? ToThreshold(string? hueStr, string? saturationStr, string? valueStr, string? startStr)
+    {
+        if (
+            double.TryParse(hueStr, out double hue) &&
+            double.TryParse(saturationStr, out double saturation) &&
+            double.TryParse(valueStr, out double value) &&
+            double.TryParse(startStr, out double start)
+        )
+        {
+            return new ThresholdHSV(hue, saturation, value, start);
+        }
+
+        return null;
+    }
+
+    private static ThresholdHSV? ReadThreshold(IConfigurationSection config, string valueRange)
+    {
+        var section = config.GetSection(valueRange);
+        ThresholdHSV? threshold= ToThreshold(
+            section["Hue"],
+            section["Saturation"],
+            section["Value"],
+            section["Start"]
+        );
+        return threshold;
+    }
+
+    public static Tolerances? GetTolerances(IConfigurationSection config)
+    {
+        Tolerances? result = null;
+
+        ThresholdHSV? darks = ReadThreshold(config, "Darks");
+        ThresholdHSV? shadows = ReadThreshold(config, "Shadows");
+        ThresholdHSV? midtones = ReadThreshold(config, "Midtones");
+        ThresholdHSV? brights = ReadThreshold(config, "Brights");
+
+        if (darks is not null && shadows is not null && midtones is not null && brights is not null)
+        {
+            result = new Tolerances(darks, shadows, midtones, brights);
+        }
+
+        return result;
+    }
+}

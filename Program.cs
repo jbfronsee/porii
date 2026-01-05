@@ -1,15 +1,16 @@
 ﻿using ImageMagick;
+using Microsoft.Extensions.Configuration;
 
 internal class Program
 {
-    public static void GeneratePalette(Options opts, MagickImage inputImage)
+    public static void GeneratePalette(Options opts, MagickImage inputImage, Tolerances tolerances)
     {
         if(opts.ResizePercentage < 100 && opts.ResizePercentage > 0)
         {
             inputImage.Resize(new Percentage(opts.ResizePercentage));
         }
 
-        List<IMagickColor<byte>> palette = Palette.PaletteFromImage(inputImage);
+        List<IMagickColor<byte>> palette = Palette.PaletteFromImage(inputImage, tolerances);
 
         if (!opts.HistogramOnly)
         {
@@ -49,12 +50,12 @@ internal class Program
         bool hasErrors = false;
         if (string.IsNullOrEmpty(opts.InputFile))
         {
-            Console.WriteLine("Usage: px-swatch [InputFile] [flags]");
+            Console.WriteLine("Usage: px-swatch [InputFile] [Flags]");
             hasErrors = true;
         }
         else if (opts.Print == false && opts.PrintImage == false && string.IsNullOrEmpty(opts.OutputFile))
         {
-            Console.WriteLine("Missing output file specified with -o [filepath]");
+            Console.WriteLine("Missing output file specified with -o [Filepath]");
             hasErrors = true;
         }
         else if (!string.IsNullOrEmpty(opts.InvalidArg))
@@ -75,22 +76,63 @@ internal class Program
             return;
         }
 
-        var inputImage = new MagickImage(opts.InputFile);
-
-        if (opts.Print || opts.Verbose)
+        try
         {
-            Console.WriteLine("Processing Image...");
-        }
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false)
+                .Build();
 
-        if (opts.Verbose)
-        {
-            var histogram = inputImage.Histogram();
-            foreach (var color in histogram)
+            Tolerances? tolerances = Config.GetTolerances(config.GetSection("Tolerances"));
+            if (tolerances is null)
             {
-                Console.WriteLine($"Color: {color.Key} Occurences: {color.Value}");
+                Console.WriteLine("Invalid or missing appsettings.json file.");
+                return;
+            }
+
+            if (opts.Verbose)
+            {
+                Console.WriteLine(new string('-', 30));
+                Console.WriteLine($"Tolerances:\n{tolerances}");
+                Console.WriteLine(new string('-', 30));
+            }
+
+            (bool tolValid, string tolMessage) = tolerances.Validate();
+            if (!tolValid)
+            {
+                Console.WriteLine(tolMessage);
+                return;
+            }
+            
+            MagickImage inputImage = new();
+            
+            try
+            {
+                inputImage = new MagickImage(opts.InputFile);
+            }
+            catch (MagickException)
+            {
+                Console.WriteLine($"Input file: {opts.InputFile} does not exist or is not an image.");
+                return;
+            }
+
+            if (opts.Print || opts.Verbose)
+            {
+                Console.WriteLine("Processing Image...");
+            }
+
+            GeneratePalette(opts, inputImage, tolerances);
+        } 
+        catch (Exception e)
+        {
+            if (opts.Verbose)
+            {
+                Console.WriteLine(e);
+            }
+            else
+            {
+                Console.WriteLine(e.Message);
             }
         }
-
-        GeneratePalette(opts, inputImage);
     }
 }
