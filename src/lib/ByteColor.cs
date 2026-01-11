@@ -1,10 +1,8 @@
-namespace SimpleColor
+namespace ByteColor
 {
-    public record struct Hsv(double H, double S, double V);
+    public record struct Hsv(byte H, byte S, byte V);
 
-    public record struct Lab(double L, double A, double B);
-
-    public record struct Rgb(byte R, byte G, byte B);
+    public record struct Lab(byte L, byte A, byte B);
 
     // Records implement IEquatable but not IComparable
     public class HsvComparer() : IComparer<Hsv>
@@ -29,20 +27,6 @@ namespace SimpleColor
             if (result != 0) return result;
 
             result = x.A.CompareTo(y.A);
-            if (result != 0) return result;
-
-            return x.B.CompareTo(y.B);
-        }
-    }
-
-    public class RgbComparer() : IComparer<Rgb>
-    {
-        public virtual int Compare(Rgb x, Rgb y)
-        {
-            int result = x.R.CompareTo(y.R);
-            if (result != 0) return result;
-
-            result = x.G.CompareTo(y.G);
             if (result != 0) return result;
 
             return x.B.CompareTo(y.B);

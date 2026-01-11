@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 
 public class Config
 {
-    public static ThresholdHSV? ToThreshold(string? hueStr, string? saturationStr, string? valueStr, string? startStr)
+    public static ThresholdHsv? ToThreshold(string? hueStr, string? saturationStr, string? valueStr, string? startStr)
     {
         if (
             double.TryParse(hueStr, out double hue) &&
@@ -11,16 +11,16 @@ public class Config
             double.TryParse(startStr, out double start)
         )
         {
-            return new ThresholdHSV(hue, saturation, value, start);
+            return new ThresholdHsv(hue, saturation, value, start);
         }
 
         return null;
     }
 
-    private static ThresholdHSV? ReadThreshold(IConfigurationSection config, string valueRange)
+    private static ThresholdHsv? ReadThreshold(IConfigurationSection config, string valueRange)
     {
         var section = config.GetSection(valueRange);
-        ThresholdHSV? threshold= ToThreshold(
+        ThresholdHsv? threshold= ToThreshold(
             section["Hue"],
             section["Saturation"],
             section["Value"],
@@ -33,10 +33,10 @@ public class Config
     {
         Tolerances? result = null;
 
-        ThresholdHSV? darks = ReadThreshold(config, "Darks");
-        ThresholdHSV? shadows = ReadThreshold(config, "Shadows");
-        ThresholdHSV? midtones = ReadThreshold(config, "Midtones");
-        ThresholdHSV? brights = ReadThreshold(config, "Brights");
+        ThresholdHsv? darks = ReadThreshold(config, "Darks");
+        ThresholdHsv? shadows = ReadThreshold(config, "Shadows");
+        ThresholdHsv? midtones = ReadThreshold(config, "Midtones");
+        ThresholdHsv? brights = ReadThreshold(config, "Brights");
 
         if (darks is not null && shadows is not null && midtones is not null && brights is not null)
         {

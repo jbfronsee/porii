@@ -17,7 +17,7 @@ internal class Program
 
         if (!opts.HistogramOnly)
         {
-            palette = Palette.FromImageKmeans(inputImage, palette, tolerances, opts.Verbose || opts.Print);
+            palette = Palette.FromImageKmeans(inputImage, palette, opts.Verbose || opts.Print);
 
             if (opts.Print)
             {
@@ -35,12 +35,12 @@ internal class Program
         }
         else if (opts.AsGPL)
         {
-            List<string> file = Format.AsGPL(palette, Path.GetFileNameWithoutExtension(opts.OutputFile));
+            List<string> file = Format.AsGpl(palette, Path.GetFileNameWithoutExtension(opts.OutputFile));
             File.WriteAllLines(opts.OutputFile, file);
         }
         else
         {
-            MagickImage paletteImage = Format.AsPNG(palette);
+            MagickImage paletteImage = Format.AsPng(palette);
 
             if (opts.PrintImage)
             {
@@ -69,6 +69,11 @@ internal class Program
         else if (!string.IsNullOrEmpty(opts.InvalidArg))
         {
             Console.WriteLine($"Invalid Argument: {opts.InvalidArg}");
+            hasErrors = true;
+        }
+        else if (opts.ResizePercentage > 100 || opts.ResizePercentage <= 0)
+        {
+            Console.WriteLine($"-r value must be between 0 and 100");
             hasErrors = true;
         }
 

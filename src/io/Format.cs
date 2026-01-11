@@ -13,7 +13,7 @@ public class Format
     /// 
     /// <param name="palette">The palette to format.</param>
     /// <param name="name">The name of the File.</param>
-    public static List<string> AsGPL(List<IMagickColor<byte>> palette, string name)
+    public static List<string> AsGpl(List<IMagickColor<byte>> palette, string name)
     {
         // Header
         List<string> gplLines =
@@ -41,7 +41,7 @@ public class Format
     /// 
     /// <param name="palette">The palette to format.</param>
     /// <param name="name">The name of the File.</param>
-    public static MagickImage AsPNG(List<IMagickColor<byte>> palette)
+    public static MagickImage AsPng(List<IMagickColor<byte>> palette)
     {
         MagickImage image = new(MagickColors.Transparent, 512, 128);
 

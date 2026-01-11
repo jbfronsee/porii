@@ -2,7 +2,7 @@ using ImageMagick;
 
 public static class MagickExtensions
 {
-    public static IEnumerable<SimpleColor.RGB> GetPixelColors(this MagickImage image)
+    public static IEnumerable<SimpleColor.Rgb> GetPixelColors(this MagickImage image)
     {
         int channels = (int)image.ChannelCount;
         if (channels < 3)
@@ -16,7 +16,7 @@ public static class MagickExtensions
             byte[] pixelBytes = pixels.GetReadOnlyArea(0, y, image.Width, 1).ToArray();
             for (int x = 0; x < pixelBytes.Length; x += channels)
             {
-                yield return new SimpleColor.RGB(pixelBytes[x], pixelBytes[x + 1], pixelBytes[x + 2]);
+                yield return new SimpleColor.Rgb(pixelBytes[x], pixelBytes[x + 1], pixelBytes[x + 2]);
             }
         }
     }

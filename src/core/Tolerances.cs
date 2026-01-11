@@ -1,19 +1,19 @@
-public class Tolerances(ThresholdHSV darks, ThresholdHSV shadows, ThresholdHSV midtones, ThresholdHSV brights)
+public class Tolerances(ThresholdHsv darks, ThresholdHsv shadows, ThresholdHsv midtones, ThresholdHsv brights)
 {
-    public ThresholdHSV Darks { get; set; } = darks;
+    public ThresholdHsv Darks { get; set; } = darks;
 
-    public ThresholdHSV Shadows { get; set; } = shadows;
+    public ThresholdHsv Shadows { get; set; } = shadows;
 
-    public ThresholdHSV Midtones { get; set; } = midtones;
+    public ThresholdHsv Midtones { get; set; } = midtones;
 
-    public ThresholdHSV Brights { get; set; } = brights;
+    public ThresholdHsv Brights { get; set; } = brights;
 
     /// <summary>
     /// Get threshold for dark, shadow, midtone, or bright values.
     /// </summary>
     /// 
     /// <param name="value">Value component of color to compare.</param>
-    public ThresholdHSV GetThreshold(double value)
+    public ThresholdHsv GetThreshold(double value)
     {
         if (value >= Shadows.ValueStart && value < Midtones.ValueStart)
         {
@@ -49,9 +49,9 @@ public class Tolerances(ThresholdHSV darks, ThresholdHSV shadows, ThresholdHSV m
         
         string err = "Invalid field value for {0}: {1}";
 
-        (ThresholdHSV, string)[] fields = [(Darks, "Darks"), (Shadows, "Shadows"), (Midtones, "Midtones"), (Brights, "Brights")];
+        (ThresholdHsv, string)[] fields = [(Darks, "Darks"), (Shadows, "Shadows"), (Midtones, "Midtones"), (Brights, "Brights")];
 
-        foreach ((ThresholdHSV thresh, string name) in fields)
+        foreach ((ThresholdHsv thresh, string name) in fields)
         {
             (bool result, string message) = thresh.Validate();
             if (!result)
