@@ -37,3 +37,8 @@ the histogram as seed values.
 
 `px-swatch Ring.jpeg -o Palette.png`
 
+<img width="512" height="128" alt="Palette" src="https://github.com/user-attachments/assets/cbc1c165-d344-4b68-bd87-f603e5e1ee3f" />
+
+`px-swatch Flowers.jpg -p | chafa -f kitty`
+
+<img width="512" height="128" alt="flowers" src="https://github.com/user-attachments/assets/d680aec2-b14d-45cd-b0ba-527195c5bf1a" />
