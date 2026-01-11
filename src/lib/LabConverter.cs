@@ -8,11 +8,11 @@ public static class LabConverter
 
     private const double AScale = byte.MaxValue / (86 + 98);
 
-    private const double BScale = byte.MaxValue / (107 + 94);
+    private const double BScale = byte.MaxValue / (108 + 94);
 
     private const int AShift = 86;
 
-    private const int BShift = 107;
+    private const int BShift = 108;
 
     private static byte LToByte(double l)
     {
