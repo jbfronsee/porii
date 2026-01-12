@@ -16,6 +16,31 @@ namespace SimpleColor
     /// <param name="B">b</param>
     public record struct Lab(double L, double A, double B);
 
+    /// <summary>
+    /// A 3 byte struct representing an RGB Colorspace Value.
+    /// </summary>
+    /// <param name="R">Red</param>
+    /// <param name="G">Green</param>
+    /// <param name="B">Blue</param>
+    public record struct Rgb(byte R, byte G, byte B);
+
+
+    /// <summary>
+    /// A 6 byte struct representing an HSV Colorspace value using 3 ushort fields.
+    /// </summary>
+    /// <param name="H">Hue</param>
+    /// <param name="S">Saturation</param>
+    /// <param name="V">Value</param>
+    public record struct PackedHsv(ushort H, ushort S, ushort V);
+
+    /// <summary>
+    /// A 6 byte struct representing a Lab Colorspace value using 3 ushort fields.
+    /// </summary>
+    /// <param name="L">L</param>
+    /// <param name="A">a</param>
+    /// <param name="B">b</param>
+    public record struct PackedLab(ushort L, ushort A, ushort B);
+
     // Records implement IEquatable but not IComparable
 
     /// <summary>
@@ -46,6 +71,23 @@ namespace SimpleColor
             if (result != 0) return result;
 
             result = x.A.CompareTo(y.A);
+            if (result != 0) return result;
+
+            return x.B.CompareTo(y.B);
+        }
+    }
+
+    /// <summary>
+    /// RGB Comparer for sorting by Red, Green, and Blue, in that order.
+    /// </summary>
+    public class RgbComparer() : IComparer<Rgb>
+    {
+        public virtual int Compare(Rgb x, Rgb y)
+        {
+            int result = x.R.CompareTo(y.R);
+            if (result != 0) return result;
+
+            result = x.G.CompareTo(y.G);
             if (result != 0) return result;
 
             return x.B.CompareTo(y.B);

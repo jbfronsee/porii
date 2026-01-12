@@ -94,9 +94,8 @@ public class Palette
     /// </summary>
     /// 
     /// <param name="pixels">The pixels of the image in HSV space.</param>
-    /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
-    public static List<IMagickColor<byte>> FromPixels(ByteColor.Hsv[] pixels, Tolerances tolerances)
+    public static List<IMagickColor<byte>> FromPixels(SimpleColor.Rgb[] pixels, Dictionary<SimpleColor.Rgb, SimpleColor.PackedHsv> colormap, Tolerances tolerances)
     {
         SortedDictionary<SimpleColor.Hsv, int> histogram = new(new ThresholdHsvComparer(tolerances));
         
@@ -104,11 +103,12 @@ public class Palette
         int step = (pixels.Length / 256) + 1;
         for (int i = 0; i < pixels.Length; i += step)
         {
-            histogram.TryAdd(HsvConverter.ToSimple(pixels[i]), 1);
+            histogram.TryAdd(Conversion.Hsv.Unpack(colormap[pixels[i]]), 1);
         }
 
-        foreach(var color in pixels.Select(HsvConverter.ToSimple))
+        foreach(var pixel in pixels)
         {
+            SimpleColor.Hsv color = Conversion.Hsv.Unpack(colormap[pixel]);
             // If the color is within threshold update the max value.
             if (histogram.ContainsKey(color))
             {
@@ -139,13 +139,25 @@ public class Palette
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
     public static List<IMagickColor<byte>> FromImage(MagickImage image, Tolerances tolerances)
     {
-        ByteColor.Hsv[] hsvPixels = image.GetPixelColors().Select(c =>
+        // pixels could be extremely large if the image is 4K or higher. But it only has 3 bytes each.
+        // colormap is limited by RGB values but is usually a lot less than pixels.
+        SimpleColor.Rgb[] pixels = new SimpleColor.Rgb[image.Width * image.Height];
+        Dictionary<SimpleColor.Rgb, SimpleColor.PackedHsv> colormap = [];
+        
+        int i = 0;
+        foreach(var pixel in image.GetPixelColors())
         {
-            var hsv = ColorHSV.FromMagickColor(new MagickColor(c.R, c.G, c.B)) ?? new ColorHSV(0, 0, 0);
-            return HsvConverter.ToByte(hsv.Hue, hsv.Saturation, hsv.Value);
-        }).ToArray();
+            if (!colormap.ContainsKey(pixel))
+            {
+                var (h, s, b) = new Unicolour(ColourSpace.Rgb255, pixel.R, pixel.G, pixel.B).Hsb;
+                colormap[pixel] = Conversion.Hsv.Pack(h / 360, s, b);
+            }
 
-        return FromPixels(hsvPixels, tolerances);
+            pixels[i] = pixel;
+            i++;
+        }
+
+        return FromPixels(pixels, colormap, tolerances);
     }
 
     /// <summary>
@@ -154,18 +166,18 @@ public class Palette
     /// <param name="pixels">The pixels of the image in LAB space.</param>
     /// <param name="clusters">Previous cluster values.</param>
     /// <returns></returns>
-    private static SimpleColor.Lab[] KMeansCluster(ByteColor.Lab[] pixels, SimpleColor.Lab[] clusters)
+    private static SimpleColor.Lab[] KMeansCluster(SimpleColor.Rgb[] pixels, SimpleColor.Lab[] clusters, Dictionary<SimpleColor.Rgb, SimpleColor.PackedLab> colormap)
     {
         // Total colors in an image is usually a lot less than the number of pixels.
-        Dictionary<ByteColor.Lab, int> memoizedCluster = [];
-        
+        Dictionary<SimpleColor.Rgb, int> memoizedCluster = []; 
+
         (SimpleColor.Lab, int)[] means = clusters.Select(c => (c, 0)).ToArray();
-        foreach (var color in pixels)
+        foreach (var pixel in pixels)
         {
-            SimpleColor.Lab colorSimple = LabConverter.ToSimple(color);
+            SimpleColor.Lab colorSimple = Conversion.Lab.Unpack(colormap[pixel]);
 
             int bestClusterIndex = 0;
-            if (!memoizedCluster.TryGetValue(color, out bestClusterIndex))
+            if (!memoizedCluster.TryGetValue(pixel, out bestClusterIndex))
             {
                 double bestDistance = double.MaxValue;
                 for (int i = 0; i < clusters.Length; i++)
@@ -178,7 +190,7 @@ public class Palette
                     }
                 }
 
-                memoizedCluster[color] = bestClusterIndex;
+                memoizedCluster[pixel] = bestClusterIndex;
             }
             
             SimpleColor.Lab bestCluster = clusters[bestClusterIndex];
@@ -199,8 +211,8 @@ public class Palette
     /// <param name="seeds">The seed values to make initial clusters from.</param>
     /// <param name="verbose">Flag that enables printing K-Means progress message.</param>
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
-    public static List<IMagickColor<byte>> FromPixelsKmeans(ByteColor.Lab[] pixels, List<IMagickColor<byte>> seeds, bool verbose = false)
-    {
+    public static List<IMagickColor<byte>> FromPixelsKmeans(SimpleColor.Rgb[] pixels, List<IMagickColor<byte>> seeds, Dictionary<SimpleColor.Rgb, SimpleColor.PackedLab> colormap, bool verbose = false)
+    {        
         int maxIterations = 32;
         SimpleColor.Lab[] clusters = seeds.Select(c =>
         {
@@ -221,7 +233,7 @@ public class Palette
                 Console.WriteLine(i);
             }
 
-            SimpleColor.Lab[] newClusters = KMeansCluster(pixels, clusters);
+            SimpleColor.Lab[] newClusters = KMeansCluster(pixels, clusters, colormap);
 
             // If there is not a lot of change based on epsilon value then stop iterating.
             finished = newClusters.Zip(clusters).Aggregate(true, (total, pair) =>
@@ -250,15 +262,28 @@ public class Palette
     /// <param name="image">The image to generate from.</param>
     /// <param name="seeds">The seed values to make initial clusters from.</param>
     /// <param name="verbose">Flag that enables printing K-Means progress message.</param>
+    /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
     public static List<IMagickColor<byte>> FromImageKmeans(MagickImage image, List<IMagickColor<byte>> seeds, bool verbose = false)
     {
-        ByteColor.Lab[] labPixels = image.GetPixelColors().Select(c =>
+        // pixels could be extremely large if the image is 4K or higher. But it only has 3 bytes each.
+        // colormap is limited by RGB values but is usually a lot less than pixels.
+        SimpleColor.Rgb[] pixels = new SimpleColor.Rgb[image.Width * image.Height];
+        Dictionary<SimpleColor.Rgb, SimpleColor.PackedLab> colormap = [];
+        
+        int i = 0;
+        foreach(var pixel in image.GetPixelColors())
         {
-            var (l, a, b) = new Unicolour(ColourSpace.Rgb255, c.R, c.G, c.B).Lab;
-            return LabConverter.ToByte(l, a, b);
-        }).ToArray();
-            
-        return FromPixelsKmeans(labPixels, seeds, verbose);
+            if (!colormap.ContainsKey(pixel))
+            {
+                var (l, a, b) = new Unicolour(ColourSpace.Rgb255, pixel.R, pixel.G, pixel.B).Lab;
+                colormap[pixel] = Conversion.Lab.Pack(l, a, b);
+            }
+
+            pixels[i] = pixel;
+            i++;
+        }
+
+        return FromPixelsKmeans(pixels, seeds, colormap, verbose);
     }
 }
