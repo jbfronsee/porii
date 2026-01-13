@@ -1,6 +1,12 @@
+using Conversion = Lib.Conversion;
+using SimpleColor = Lib.SimpleColor;
+
+using App.Extensions;
 using ImageMagick;
 using ImageMagick.Colors;
 using Wacton.Unicolour;
+
+namespace App.Core;
 
 public class Palette
 {

@@ -1,4 +1,7 @@
+using App.Core;
 using Microsoft.Extensions.Configuration;
+
+namespace App.Io;
 
 public class Config
 {

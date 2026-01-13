@@ -1,3 +1,5 @@
+namespace App.Core;
+
 public class Tolerances(ThresholdHsv darks, ThresholdHsv shadows, ThresholdHsv midtones, ThresholdHsv brights)
 {
     public ThresholdHsv Darks { get; set; } = darks;

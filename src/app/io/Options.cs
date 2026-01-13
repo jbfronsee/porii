@@ -1,3 +1,5 @@
+namespace App.Io;
+
 public class Options
 {
     private static bool IsFlag(string arg)

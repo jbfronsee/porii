@@ -1,3 +1,5 @@
+namespace App.Core;
+
 public class ThresholdHsv(double hue = 0, double saturation = 0, double value = 0, double valueStart = 0)
 {
     public double Hue { get; set; } = hue;

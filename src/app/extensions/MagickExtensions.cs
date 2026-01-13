@@ -1,4 +1,8 @@
+using SimpleColor = Lib.SimpleColor;
+
 using ImageMagick;
+
+namespace App.Extensions;
 
 public static class MagickExtensions
 {

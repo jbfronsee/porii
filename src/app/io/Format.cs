@@ -1,6 +1,8 @@
 using ImageMagick;
 using ImageMagick.Drawing;
 
+namespace App.Io;
+
 public class Format
 {
     private static readonly string mLineSeparator = new('-', 60);

@@ -1,5 +1,9 @@
-﻿using ImageMagick;
+﻿using App.Core;
+using App.Io;
+using ImageMagick;
 using Microsoft.Extensions.Configuration;
+
+namespace App;
 
 internal class Program
 {

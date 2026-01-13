@@ -1,4 +1,4 @@
-namespace SimpleColor
+namespace Lib.SimpleColor
 {
     /// <summary>
     /// A 3 double struct representing an HSV Colorspace Value.
