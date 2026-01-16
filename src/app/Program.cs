@@ -2,14 +2,30 @@
 using App.Io;
 using ImageMagick;
 using Microsoft.Extensions.Configuration;
+using Wacton.Unicolour;
+
+using SimpleColor = Lib.SimpleColor;
+using Conversion = Lib.Conversion;
 
 namespace App;
 
 internal class Program
 {
-    public static void GeneratePalette(Options opts, MagickImage inputImage, Tolerances tolerances)
+    public static void HandleException(Exception exception, string message, bool verbose)
     {
-        if (opts.ResizePercentage < 100 && opts.ResizePercentage > 0)
+        if (verbose)
+        {
+            Console.WriteLine(exception);
+        }
+        else
+        {
+            Console.WriteLine(message);
+        }
+    }
+
+    public static void GeneratePalette(Options opts, MagickImage inputImage, Tolerances tolerances, Buckets buckets)
+    {
+        if ( opts.ResizePercentage < 100 && opts.ResizePercentage > 0)
         {
             inputImage.Resize(new Percentage(opts.ResizePercentage));
         }
@@ -17,7 +33,7 @@ internal class Program
         inputImage.Settings.BackgroundColor = MagickColors.White;
         inputImage.Alpha(AlphaOption.Remove);
 
-        List<IMagickColor<byte>> palette = Palette.FromImage(inputImage, tolerances);
+        List<IMagickColor<byte>> palette = Palette.FromImage(inputImage, tolerances, buckets);
 
         if (!opts.HistogramOnly)
         {
@@ -39,19 +55,50 @@ internal class Program
         }
         else if (opts.AsGPL)
         {
+
+            List<SimpleColor.Hsv> colors = buckets.PaletteHsv().ToList();
+            
+            List<IMagickColor<byte>> palette2 = [];
+            
+            foreach (var color in colors)
+            {
+                var b = new Unicolour(ColourSpace.Hsb, color.H * 360, color.S, color.V).Rgb.Byte255;
+                palette2.Add(new MagickColor((byte)b.R, (byte)b.G, (byte)b.B));
+            }
+            
             List<string> file = Format.AsGpl(palette, Path.GetFileNameWithoutExtension(opts.OutputFile));
             File.WriteAllLines(opts.OutputFile, file);
         }
         else
         {
-            MagickImage paletteImage = Format.AsPng(palette);
+            List<SimpleColor.Hsv> colors2 = buckets.PaletteHsv().ToList();
+
+            List<IMagickColor<byte>> palette2 = [];
+            
+            foreach (var color in colors2)
+            {
+                var b = new Unicolour(ColourSpace.Hsb, color.H * 360, color.S, color.V).Rgb.Byte255;
+                palette2.Add(new MagickColor((byte)b.R, (byte)b.G, (byte)b.B));
+            }
+
+            using MagickImage paletteImage = Format.AsPng(palette);
 
             if (opts.PrintImage)
             {
+                var settings = new QuantizeSettings();
+                settings.ColorSpace = ColorSpace.Lab;
+                settings.DitherMethod = DitherMethod.FloydSteinberg;
+                inputImage.Remap(palette, settings);
+                //inputImage.Write(Console.OpenStandardOutput());
                 paletteImage.Write(Console.OpenStandardOutput());
             }
             else
             {
+                var settings = new QuantizeSettings();
+                settings.DitherMethod = DitherMethod.FloydSteinberg;
+                settings.ColorSpace = ColorSpace.Lab;
+                inputImage.Remap(palette, settings);
+                //inputImage.Write(opts.OutputFile);
                 paletteImage.Write(opts.OutputFile);
             }
         }
@@ -82,6 +129,33 @@ internal class Program
         }
 
         return hasErrors;
+    }
+
+    public static (Buckets, string) ReadBuckets(IConfigurationRoot config, bool verbose)
+    {
+        (Buckets buckets, string errorMessage) = Config.GetBuckets(config.GetSection("Buckets"));
+        // if (!buckets.Points.Any())
+        // {
+        //     string error = "Invalid or missing appsettings.json file.";
+        //     Console.WriteLine(error);
+        //     return (buckets, error);
+        // }
+
+        // if (verbose)
+        // {
+        //     Console.WriteLine(Format.LineSeparator);
+        //     Console.WriteLine($"Tolerances:\n{tolerances}");
+        //     Console.WriteLine(Format.LineSeparator);
+        // }
+
+        // (bool bucketValid, string bucketMessage) = buckets.Validate();
+        // if (!bucketValid)
+        // {
+        //     Console.WriteLine(bucketMessage);
+        //     return (buckets, bucketMessage);
+        // }
+
+        return (buckets, "");
     }
 
     public static Tolerances? ReadTolerances(IConfigurationRoot config, bool verbose)
@@ -127,22 +201,13 @@ internal class Program
                 .Build();
 
             Tolerances? tolerances = ReadTolerances(config, opts.Verbose);
-            if (tolerances is null)
+            (Buckets buckets, string errorMessage) = ReadBuckets(config, opts.Verbose);
+            if (tolerances is null || !string.IsNullOrEmpty(errorMessage))
             {
                 return;
             }
             
-            MagickImage inputImage = new();
-            
-            try
-            {
-                inputImage = new MagickImage(opts.InputFile);
-            }
-            catch (MagickException)
-            {
-                Console.WriteLine($"Input file: {opts.InputFile} does not exist or is not an image.");
-                return;
-            }
+            using MagickImage inputImage = new(opts.InputFile);
 
             if (opts.Print || opts.Verbose)
             {
@@ -150,18 +215,19 @@ internal class Program
                 Console.WriteLine(Format.LineSeparator);
             }
 
-            GeneratePalette(opts, inputImage, tolerances);
-        } 
+            GeneratePalette(opts, inputImage, tolerances, buckets);
+        }
+        catch (MagickBlobErrorException mbee)
+        {
+            HandleException(mbee, $"Input file: {opts.InputFile} does not exist or is not an image.", opts.Verbose);
+        }
+        catch (MagickMissingDelegateErrorException mmdee)
+        {
+            HandleException(mmdee, $"Input file: {opts.InputFile} does not exist or is not an image.", opts.Verbose);
+        }
         catch (Exception e)
         {
-            if (opts.Verbose)
-            {
-                Console.WriteLine(e);
-            }
-            else
-            {
-                Console.WriteLine(e.Message);
-            }
+            HandleException(e, e.Message, opts.Verbose);
         }
     }
 }

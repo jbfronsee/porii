@@ -22,7 +22,7 @@ public class Format
         [
             "GIMP Palette",
             $"Name: {name}",
-            $"Columns: {palette.Count}",
+            $"Columns: 8",
             "#"
         ];
 
@@ -60,6 +60,35 @@ public class Format
 
             x += width;
             if (x >= 512)
+            {
+                x = 0;
+                y += height;
+            }
+        }
+
+        // Draw the squares onto the image
+        canvas.Draw(image);
+        image.Format = MagickFormat.Png;
+        return image;
+    }
+
+    public static MagickImage AsPng2(List<IMagickColor<byte>> palette)
+    {
+        MagickImage image = new(MagickColors.Transparent, 2048, 2048);
+
+        Drawables canvas = new();
+
+        double x = 0, y = 0, width = 128, height = 128;
+        foreach(IMagickColor<byte> color in palette)
+        {
+            // Define the rectangle's properties
+            canvas
+                .StrokeColor(color)
+                .FillColor(color)
+                .Rectangle(x, y, x + width, y + height);
+
+            x += width;
+            if (x >= 2048)
             {
                 x = 0;
                 y += height;

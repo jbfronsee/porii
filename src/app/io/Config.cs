@@ -5,6 +5,14 @@ namespace App.Io;
 
 public class Config
 {
+    public const string BucketPointId = "Point";
+
+    public const string SaturationKey = "Saturation";
+
+    public const string ValueKey = "Value";
+
+    public const string BinsKey = "Bins";
+
     public static ThresholdHsv? ToThreshold(string? hueStr, string? saturationStr, string? valueStr, string? startStr)
     {
         if (
@@ -47,5 +55,70 @@ public class Config
         }
 
         return result;
+    }
+
+    private static BucketPoint? ReadPoint(IConfigurationSection point)
+    {
+        BucketPoint? bucketPoint = null;
+        if 
+        (
+            double.TryParse(point[SaturationKey], out double saturation) && 
+            double.TryParse(point[ValueKey], out double value) &&
+            int.TryParse(point[BinsKey], out int bins)
+        )
+        {
+            return new BucketPoint(saturation, value, bins);
+        }
+
+        return bucketPoint;
+    }
+
+    public static int GetIndex(string pointKey)
+    {
+        bool isValid = pointKey.StartsWith(BucketPointId);
+        
+        if (isValid && int.TryParse(pointKey[BucketPointId.Length..], out int index) && index >= 1)
+        {
+            return index - 1;
+        }
+
+        return -1;
+    }
+
+    public static (Buckets, string) GetBuckets(IConfigurationSection config)
+    {
+        Buckets buckets = new();
+        string errorMessage = "";
+        buckets.SaturatedHues = config.GetSection("Saturated").GetSection("Hues").Get<List<double>>() ?? [];
+        buckets.DesaturatedHues = config.GetSection("Desaturated").GetSection("Hues").Get<List<double>>() ?? [];
+
+
+        // foreach (var my in my_doubles ?? [])
+        // {
+        //     Console.WriteLine(my);
+        // }
+
+        // foreach (var child in config.GetChildren().OrderBy(c => GetIndex(c.Key)))
+        // {
+        //     int index = GetIndex(child.Key);
+            
+        //     if (index < 0)
+        //     {
+        //         errorMessage = "Cannot retrieve index from Bucket Point.";
+        //         break;
+        //     }
+
+
+        //     if (ReadPoint(child) is BucketPoint bucketPoint)
+        //     {
+        //         buckets.Points.Add(bucketPoint);
+        //     }
+        //     else
+        //     {
+        //         errorMessage = $"Point{index} is not a valid Bucket Point please specify Saturation and Value.";
+        //     }
+        // }
+
+        return (buckets, errorMessage);
     }
 }
