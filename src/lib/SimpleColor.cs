@@ -1,3 +1,5 @@
+using Lib.Colors;
+
 namespace Lib.SimpleColor
 {
     /// <summary>
@@ -6,7 +8,19 @@ namespace Lib.SimpleColor
     /// <param name="H">Hue</param>
     /// <param name="S">Saturation</param>
     /// <param name="V">Value</param>
-    public record struct Hsv(double H, double S, double V);
+    public record struct Hsv(double H, double S, double V) : IComparable<Hsv>
+    {
+        public int CompareTo(Hsv other)
+        {
+            int result = H.CompareTo(other.H);
+            if (result != 0) return result;
+
+            result = S.CompareTo(other.S);
+            if (result != 0) return result;
+
+            return V.CompareTo(other.V);
+        }
+    }
 
     /// <summary>
     /// A 3 double struct representing an Lab Colorspace Value.
@@ -14,7 +28,25 @@ namespace Lib.SimpleColor
     /// <param name="L">L</param>
     /// <param name="A">a</param>
     /// <param name="B">b</param>
-    public record struct Lab(double L, double A, double B);
+    public record struct Lab(double L, double A, double B) : IComparable<Lab>, IColorVector<double>
+    {
+        public double X { get => L; set => L = value; }
+
+        public double Y { get => A; set => A = value; }
+
+        public double Z { get => B; set => B = value; }
+        
+        public int CompareTo(Lab other)
+        {
+            int result = L.CompareTo(other.L);
+            if (result != 0) return result;
+
+            result = A.CompareTo(other.A);
+            if (result != 0) return result;
+
+            return B.CompareTo(other.B);
+        }
+    }
 
     /// <summary>
     /// A 3 byte struct representing an RGB Colorspace Value.

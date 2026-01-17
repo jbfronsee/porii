@@ -1,8 +1,12 @@
-using System.Numerics;
+namespace Lib.Colors;
 
-namespace Lib.Conversion;
-
-public static class Lab
+/// <summary>
+/// A 6 byte struct representing a Lab Colorspace value using 3 ushort fields.
+/// </summary>
+/// <param name="L">L</param>
+/// <param name="A">a</param>
+/// <param name="B">b</param>
+public record struct PackedLab(ushort L, ushort A, ushort B) : IPacked<VectorLab>
 {
     // Values were calculated using every 8-bit RGB value.
 
@@ -85,68 +89,28 @@ public static class Lab
     /// <param name="a">a</param>
     /// <param name="b">b</param>
     /// <returns></returns>
-    public static SimpleColor.PackedLab Pack(double l, double a, double b)
+    public static PackedLab Pack(VectorLab value)
     {
-        return new SimpleColor.PackedLab(LPack(l), APack(a), BPack(b));
+        return new PackedLab(LPack(value.L), APack(value.A), BPack(value.B));
     }
 
     /// <summary>
-    /// Convert Lab value from double representation to byte representation.
+    /// Convert Lab value from double representation to ushort representation.
     /// 
     /// Precision of Lab space is lost during conversion but the calculated
     /// total RGB values that it can map is all 16,777,216 possible values.
-    /// </summary>
-    /// <param name="lab">Color to convert.</param>
-    /// <returns></returns>
-    public static SimpleColor.PackedLab Pack(SimpleColor.Lab lab)
-    {
-        return Pack(lab.L, lab.A, lab.B);
-    }
-
-    /// <summary>
-    /// Convert Lab value from double representation to byte representation.
-    /// 
-    /// Precision of Lab space is lost during conversion but the calculated
-    /// total RGB values that it can map is all 16,777,216 possible values.
-    /// </summary>
-    /// <param name="lab">Color to convert.</param>
-    /// <returns></returns>
-    public static SimpleColor.PackedLab Pack(Vector3 vec)
-    {
-        return Pack(vec.X, vec.Y, vec.Z);
-    }
-
-    /// <summary>
-    /// Convert Lab value from ushort representation to double representation.
     /// </summary>
     /// <param name="l">l</param>
     /// <param name="a">a</param>
     /// <param name="b">b</param>
     /// <returns></returns>
-    public static SimpleColor.Lab Unpack(ushort l, ushort a, ushort b)
+    public static VectorLab Unpack(PackedLab value)
     {
-        return new SimpleColor.Lab(LUnpack(l), AUnpack(a), BUnpack(b));
+        return new VectorLab(LUnpack(value.L), AUnpack(value.A), BUnpack(value.B));
     }
 
-    /// <summary>
-    /// Convert Lab value from ushort representation to double representation.
-    /// </summary>
-    /// <param name="lab">Color to convert.</param>
-    /// <returns></returns>
-    public static SimpleColor.Lab Unpack(SimpleColor.PackedLab lab)
+    public readonly VectorLab Unpack()
     {
-        return Unpack(lab.L, lab.A, lab.B);
-    }
-
-        /// <summary>
-    /// Convert Lab value from ushort representation to double representation.
-    /// </summary>
-    /// <param name="l">l</param>
-    /// <param name="a">a</param>
-    /// <param name="b">b</param>
-    /// <returns></returns>
-    public static Vector3 UnpackVec(SimpleColor.PackedLab lab)
-    {
-        return new Vector3((float)LUnpack(lab.L), (float)AUnpack(lab.A), (float)BUnpack(lab.B));
+        return Unpack(this);
     }
 }

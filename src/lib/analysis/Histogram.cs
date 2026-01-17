@@ -1,29 +1,24 @@
+using Lib.Colors;
+
 namespace Lib.Analysis;
 
-public class Histogram
+public class Histogram : KMeans<Histogram.Entry, PackedLab, VectorLab>
 {
     private const int BucketCount = 256;
 
-    public record Entry : IComparable<Entry>
+    public record Entry : SafeClusterLab<Entry>
     {
-        private SimpleColor.LabComparer mComparer = new();
-
-        public SimpleColor.PackedLab Bucket { get; set; }
+        public Entry(VectorLab cluster, VectorLab mean, int count) : base(cluster, mean, count) { }
         
-        public SimpleColor.PackedLab Average { get; set;} 
-        
-        public int Count { get; set; }
+        public VectorLab Bucket { get => Cluster; set => Cluster = value; }
 
-        public int CompareTo(Entry? other)
+        public override Entry ParallelSafeCopy()
         {
-            if (other == null)
-            {
-                return -1;
-            }
-
-            return mComparer.Compare(Conversion.Lab.Unpack(Bucket), Conversion.Lab.Unpack(other.Bucket));
+            return new Entry(Cluster, Mean, Count);
         }
     }
 
-    public Entry[] Results { get; } = new Entry[BucketCount];
+    public override Entry[] Clusters { get; set; } = new Entry[BucketCount];
+
+    public Entry[] Results => Clusters;
 }
