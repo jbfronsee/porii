@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using Lib.Analysis.Interfaces;
 using Lib.Colors;
 using Lib.Colors.Interfaces;
-using Lib.SimpleColor;
 
 namespace Lib.Analysis;
 
@@ -13,7 +12,7 @@ public abstract class KMeans<T, U> : IKMeans<T>
 {
     public virtual T[] Clusters { get; set; } = [];
 
-    protected virtual int UpdateBestCluster(T[] clusters, SimpleColor.Rgb pixel, Dictionary<SimpleColor.Rgb, int> memoizedClusters)
+    protected virtual int UpdateBestCluster(T[] clusters, ColorRgb pixel, Dictionary<ColorRgb, int> memoizedClusters)
     {
         U color = UnpackPixel(pixel);
 
@@ -43,11 +42,11 @@ public abstract class KMeans<T, U> : IKMeans<T>
         return bestClusterIndex;
     }
 
-    protected abstract U UnpackPixel(SimpleColor.Rgb pixel);
+    protected abstract U UnpackPixel(ColorRgb pixel);
 
-    public virtual void Cluster(SimpleColor.Rgb[] pixels)
+    public virtual void Cluster(ColorRgb[] pixels)
     {
-        Dictionary<SimpleColor.Rgb, int> memoizedClusters = [];
+        Dictionary<ColorRgb, int> memoizedClusters = [];
 
         foreach(var pixel in pixels)
         {
@@ -55,12 +54,12 @@ public abstract class KMeans<T, U> : IKMeans<T>
         }
     }
 
-    public virtual void ClusterParallel(SimpleColor.Rgb[] pixels)
+    public virtual void ClusterParallel(ColorRgb[] pixels)
     {
         ConcurrentBag<T[]> bag = [];
         Parallel.ForEach(
             pixels,
-            () => (new Dictionary<SimpleColor.Rgb, int>(), Clusters.Select(c => c.ParallelSafeCopy()).ToArray()), 
+            () => (new Dictionary<ColorRgb, int>(), Clusters.Select(c => c.ParallelSafeCopy()).ToArray()), 
             (pixel, _, threadLocals) =>
             {
                 var (memoizedCluster, means) = threadLocals;
@@ -91,17 +90,17 @@ public abstract class KMeans<T, U> : IKMeans<T>
 
 public class KMeansLab : KMeans<ClusterLab, VectorLab>
 {
-    public Dictionary<SimpleColor.Rgb, Lib.Colors.PackedLab> Colormap { get; set; } = [];
+    public Dictionary<ColorRgb, PackedLab> Colormap { get; set; } = [];
 
     public KMeansLab() {}
 
-    public KMeansLab(ClusterLab[] clusters, Dictionary<Rgb, Colors.PackedLab> colormap)
+    public KMeansLab(ClusterLab[] clusters, Dictionary<ColorRgb, PackedLab> colormap)
     {
         Clusters = clusters;
         Colormap = colormap;
     }
 
-    protected override VectorLab UnpackPixel(Rgb pixel)
+    protected override VectorLab UnpackPixel(ColorRgb pixel)
     {
         return Colormap[pixel].Unpack();
     }

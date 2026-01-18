@@ -1,12 +1,10 @@
-﻿using App.Core;
-using App.Io;
-using ImageMagick;
+﻿using ImageMagick;
 using ImageMagick.Colors;
 using Microsoft.Extensions.Configuration;
 using Wacton.Unicolour;
 
-using SimpleColor = Lib.SimpleColor;
-using Conversion = Lib.Conversion;
+using App.Core;
+using App.Io;
 using Lib.Analysis;
 using Lib.Colors;
 
@@ -26,17 +24,11 @@ internal class Program
         }
     }
 
-    public static void GeneratePalette(Options opts, MagickImage inputImage, Tolerances tolerances, Buckets buckets)
+    public static void GeneratePalette(Options opts, IMagickImage<byte> image, Buckets buckets, IMagickImage<byte>? originalImage = null)
     {
-        if ( opts.ResizePercentage < 100 && opts.ResizePercentage > 0)
-        {
-            inputImage.Sample(new Percentage(opts.ResizePercentage));
-        }
+        originalImage ??= image;
 
-        inputImage.Settings.BackgroundColor = MagickColors.White;
-        inputImage.Alpha(AlphaOption.Remove);
-
-        HistogramLab histogram = Palette.CalculateHistogramFromSample(inputImage, tolerances, buckets);
+        HistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
         
         List<VectorLab> paletteLab = histogram
             .PaletteWithFilter(opts.FilterLevel)
@@ -51,11 +43,6 @@ internal class Program
             paletteLab = paletteLab.Concat(histogram.Palette().Where(p => !paletteLab.Contains(p.Mean)).Select(e => e.Mean)).Take(16).ToList();
         }
 
-        //.WriteLine(histogram);
-        //Console.WriteLine(histogram);
-                // var maxes = histogram.Results.OrderByDescending(h => h.Count).Where(h => h.Count > 0).Take(16).ToList();
-        // List<IMagickColor<byte>> palette = maxes
-
         List<IMagickColor<byte>> palette = paletteLab.Select(Colors.Convert.ToHsv)
             .OrderBy(c => c)
             .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
@@ -63,7 +50,7 @@ internal class Program
 
         if (!opts.HistogramOnly)
         {
-            palette = Palette.FromImageKmeans(inputImage, palette, histogram.Colormap, opts.Verbose || opts.Print);
+            palette = Palette.FromImageKmeans(image, palette, histogram.Colormap, opts.Verbose || opts.Print);
 
             if (opts.Print)
             {
@@ -82,7 +69,7 @@ internal class Program
         else if (opts.AsGPL)
         {
 
-            List<SimpleColor.Hsv> colors = buckets.PaletteHsv().ToList();
+            List<ColorHsv> colors = buckets.PaletteHsv().ToList();
             
             List<IMagickColor<byte>> palette2 = [];
             
@@ -100,7 +87,7 @@ internal class Program
             if (opts.DisplayBins)
             {
 
-                List<SimpleColor.Hsv> colors2 = buckets.PaletteHsv().ToList();
+                List<ColorHsv> colors2 = buckets.PaletteHsv().ToList();
 
                 List<IMagickColor<byte>> palette2 = [];
                 
@@ -123,8 +110,8 @@ internal class Program
                 var settings = new QuantizeSettings();
                 settings.ColorSpace = ColorSpace.Lab;
                 settings.DitherMethod = DitherMethod.FloydSteinberg;
-                inputImage.Remap(palette, settings);
-                inputImage.Write(Console.OpenStandardOutput());
+                originalImage.Remap(palette, settings);
+                originalImage.Write(Console.OpenStandardOutput());
 
                 //TODO cleanup
                 return;
@@ -136,11 +123,6 @@ internal class Program
             }
             else
             {
-                // var settings = new QuantizeSettings();
-                // settings.DitherMethod = DitherMethod.FloydSteinberg;
-                // settings.ColorSpace = ColorSpace.Lab;
-                // inputImage.Remap(palette, settings);
-                // inputImage.Write(opts.OutputFile);
                 paletteImage.Write(opts.OutputFile);
             }
         }
@@ -200,32 +182,6 @@ internal class Program
         return (buckets, "");
     }
 
-    public static Tolerances? ReadTolerances(IConfigurationRoot config, bool verbose)
-    {
-        Tolerances? tolerances = Config.GetTolerances(config.GetSection("Tolerances"));
-        if (tolerances is null)
-        {
-            Console.WriteLine("Invalid or missing appsettings.json file.");
-            return tolerances;
-        }
-
-        if (verbose)
-        {
-            Console.WriteLine(Format.LineSeparator);
-            Console.WriteLine($"Tolerances:\n{tolerances}");
-            Console.WriteLine(Format.LineSeparator);
-        }
-
-        (bool tolValid, string tolMessage) = tolerances.Validate();
-        if (!tolValid)
-        {
-            Console.WriteLine(tolMessage);
-            return null;
-        }
-
-        return tolerances;
-    }
-
     private static void Main(string[] args)
     {
         Options opts = Options.GetOptions(args);
@@ -242,9 +198,8 @@ internal class Program
                 .AddJsonFile("appsettings.json", optional: false)
                 .Build();
 
-            Tolerances? tolerances = ReadTolerances(config, opts.Verbose);
             (Buckets buckets, string errorMessage) = ReadBuckets(config, opts.Verbose);
-            if (tolerances is null || !string.IsNullOrEmpty(errorMessage))
+            if (!string.IsNullOrEmpty(errorMessage))
             {
                 return;
             }
@@ -257,7 +212,19 @@ internal class Program
                 Console.WriteLine(Format.LineSeparator);
             }
 
-            GeneratePalette(opts, inputImage, tolerances, buckets);
+            inputImage.Settings.BackgroundColor = MagickColors.White;
+            inputImage.Alpha(AlphaOption.Remove);
+
+            if ( opts.ResizePercentage < 100 && opts.ResizePercentage > 0)
+            {
+                using IMagickImage<byte> sampled = inputImage.Clone();
+                sampled.Sample(new Percentage(opts.ResizePercentage));
+                GeneratePalette(opts, sampled, buckets, inputImage);
+            }
+            else
+            {
+                GeneratePalette(opts, inputImage, buckets);
+            }
         }
         catch (MagickBlobErrorException mbee)
         {

@@ -1,11 +1,9 @@
+using Lib.Colors;
 
-using Lib.Conversion;
-using SimpleColor = Lib.SimpleColor;
-
-namespace Tests.Lib.Conversion;
+namespace Tests.Lib.Colors;
 
 [TestClass]
-public sealed class TestLab
+public sealed class TestPackedLab
 {
     // Some loss of precision is expected when converting back from ushort
     
@@ -19,15 +17,15 @@ public sealed class TestLab
     public void Test_Pack_Lab_Min()
     {
         // Calculated Min Values
-        SimpleColor.Lab value = new
+        VectorLab value = new
         (
-            Lab.LMin - SharedConstants.Epsilon,
-            Lab.AMin - SharedConstants.Epsilon,
-            Lab.BMin - SharedConstants.Epsilon
+            PackedLab.LMin - SharedConstants.Epsilon,
+            PackedLab.AMin - SharedConstants.Epsilon,
+            PackedLab.BMin - SharedConstants.Epsilon
         );
-        SimpleColor.PackedLab expected = new(0, 0, 0);
+        PackedLab expected = new(0, 0, 0);
 
-        SimpleColor.PackedLab actual = Lab.Pack(value);
+        PackedLab actual = PackedLab.Pack(value);
         
         Assert.AreEqual(expected, actual);
     }
@@ -36,15 +34,15 @@ public sealed class TestLab
     public void Test_Pack_Lab_Max()
     {
         // Calculated Max Values
-        SimpleColor.Lab value = new
+        VectorLab value = new
         (
-            Lab.LMax + SharedConstants.Epsilon,
-            Lab.AMax + SharedConstants.Epsilon,
-            Lab.BMax + SharedConstants.Epsilon
+            PackedLab.LMax + SharedConstants.Epsilon,
+            PackedLab.AMax + SharedConstants.Epsilon,
+            PackedLab.BMax + SharedConstants.Epsilon
         );
-        SimpleColor.PackedLab expected = new(ushort.MaxValue, ushort.MaxValue, ushort.MaxValue);
+        PackedLab expected = new(ushort.MaxValue, ushort.MaxValue, ushort.MaxValue);
 
-        SimpleColor.PackedLab actual = Lab.Pack(value);
+        PackedLab actual = PackedLab.Pack(value);
         
         Assert.AreEqual(expected, actual);
     }
@@ -53,26 +51,26 @@ public sealed class TestLab
     public void Test_Pack_Lab_Middle()
     {
         // Values just have to be between max and min L a b scale = [0, 100] ~[-86, 98] ~[-107, 94]
-        SimpleColor.Lab value = new(50, 5, 5);
+        VectorLab value = new(50, 5, 5);
 
-        SimpleColor.PackedLab actual = Lab.Pack(value);
+        PackedLab actual = PackedLab.Pack(value);
         
         Assert.IsInRange(32767, 32768, actual.L);
         Assert.IsInRange(32402, 32403, actual.A);
         Assert.IsInRange(36554, 36555, actual.B);
     }
 
-    private void Test_Unpack_Lab_Min_Logic(Func<SimpleColor.PackedLab, SimpleColor.Lab> unpackFunc)
+    private void Test_Unpack_Lab_Min_Logic(Func<PackedLab, VectorLab> unpackFunc)
     {
-        SimpleColor.PackedLab value = new(0, 0, 0);
-        SimpleColor.Lab expected = new
+        PackedLab value = new(0, 0, 0);
+        VectorLab expected = new
         (
-            Lab.LMin,
-            Lab.AMin,
-            Lab.BMin
+            PackedLab.LMin,
+            PackedLab.AMin,
+            PackedLab.BMin
         );
 
-        SimpleColor.Lab actual = unpackFunc(value);
+        VectorLab actual = unpackFunc(value);
         
         Assert.AreEqual(expected.L, actual.L, SharedConstants.Epsilon);
         Assert.AreEqual(expected.A, actual.A, SharedConstants.Epsilon);
@@ -82,27 +80,27 @@ public sealed class TestLab
     [TestMethod]
     public void Test_Unpack_Lab_Min()
     {
-        Test_Unpack_Lab_Min_Logic(Lab.Unpack);
+        Test_Unpack_Lab_Min_Logic(PackedLab.Unpack);
     }
 
     [TestMethod]
     public void Test_Unpack_Lab_Min_Doubles()
     {
-        Test_Unpack_Lab_Min_Logic(c => Lab.Unpack(c.L, c.A, c.B));
+        Test_Unpack_Lab_Min_Logic(c => c.Unpack());
     }
 
-    private void Test_Unpack_Lab_Max_Logic(Func<SimpleColor.PackedLab, SimpleColor.Lab> unpackFunc)
+    private void Test_Unpack_Lab_Max_Logic(Func<PackedLab, VectorLab> unpackFunc)
     {
         // Calculated Max Values
-        SimpleColor.PackedLab value = new(ushort.MaxValue, ushort.MaxValue, ushort.MaxValue);
-        SimpleColor.Lab expected = new
+        PackedLab value = new(ushort.MaxValue, ushort.MaxValue, ushort.MaxValue);
+        VectorLab expected = new
         (
-            Lab.LMax,
-            Lab.AMax,
-            Lab.BMax
+            PackedLab.LMax,
+            PackedLab.AMax,
+            PackedLab.BMax
         );
         
-        SimpleColor.Lab actual = unpackFunc(value);
+        VectorLab actual = unpackFunc(value);
         
         Assert.AreEqual(expected.L, actual.L, SharedConstants.Epsilon);
         Assert.AreEqual(expected.A, actual.A, SharedConstants.Epsilon);
@@ -112,22 +110,22 @@ public sealed class TestLab
     [TestMethod]
     public void Test_Unpack_Lab_Max()
     {
-        Test_Unpack_Lab_Max_Logic(Lab.Unpack);
+        Test_Unpack_Lab_Max_Logic(PackedLab.Unpack);
     }
 
     [TestMethod]
     public void Test_Unpack_Lab_Max_Doubles()
     {
-        Test_Unpack_Lab_Max_Logic(c => Lab.Unpack(c.L, c.A, c.B));
+        Test_Unpack_Lab_Max_Logic(c => c.Unpack());
     }
 
-    private void Test_Unpack_Lab_Middle_Logic(Func<SimpleColor.PackedLab, SimpleColor.Lab> unpackFunc)
+    private void Test_Unpack_Lab_Middle_Logic(Func<PackedLab, VectorLab> unpackFunc)
     {
         // Values just have to be between max and min L a b scale = [0, 100] ~[-86, 98] ~[-107, 94]
-        SimpleColor.PackedLab value = new(32767, 32403, 36554);
-        SimpleColor.Lab expected = new(50, 5, 5);
+        PackedLab value = new(32767, 32403, 36554);
+        VectorLab expected = new(50, 5, 5);
         
-        SimpleColor.Lab actual = unpackFunc(value);
+        VectorLab actual = unpackFunc(value);
         
         Assert.AreEqual(expected.L, actual.L, LargerEpsilonL);
         Assert.AreEqual(expected.A, actual.A, LargerEpsilonAB);
@@ -137,12 +135,12 @@ public sealed class TestLab
     [TestMethod]
     public void Test_Unpack_Lab_Middle()
     {
-        Test_Unpack_Lab_Middle_Logic(Lab.Unpack);
+        Test_Unpack_Lab_Middle_Logic(PackedLab.Unpack);
     }
 
     [TestMethod]
     public void Test_Unpack_Lab_Middle_Doubles()
     {
-        Test_Unpack_Lab_Middle_Logic(c => Lab.Unpack(c.L, c.A, c.B));
+        Test_Unpack_Lab_Middle_Logic(c => c.Unpack());
     }
 }

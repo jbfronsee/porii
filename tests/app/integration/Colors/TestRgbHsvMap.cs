@@ -1,7 +1,4 @@
 
-using Conversion = Lib.Conversion;
-using SimpleColor = Lib.SimpleColor;
-
 using Wacton.Unicolour;
 
 namespace Tests.App.Integration.Colors;
@@ -9,15 +6,15 @@ namespace Tests.App.Integration.Colors;
 [TestClass]
 public sealed class TestRgbHsvMap
 {
-    private SimpleColor.Rgb PackAndUnpack(SimpleColor.Rgb color)
+    private ColorRgb PackAndUnpack(ColorRgb color)
     {
         // Pack Colors into ushort struct
         var (h, s, b) = new Unicolour(ColourSpace.Rgb255, color.R, color.G, color.B).Hsb;
-        SimpleColor.PackedHsv packed = Conversion.Hsv.Pack(h / 360, s, b);
+        PackedHsv packed = new ColorHsv(h / 360, s, b).Pack();
 
         // Unpack the same color and see what we obtained
-        SimpleColor.Hsv simpleHsv = Conversion.Hsv.Unpack(packed);
-        var back = new Unicolour(ColourSpace.Hsb, simpleHsv.H * 360, simpleHsv.S, simpleHsv.V).Rgb.Byte255;
+        ColorHsv hsv = packed.Unpack();
+        var back = new Unicolour(ColourSpace.Hsb, hsv.H * 360, hsv.S, hsv.V).Rgb.Byte255;
         return new((byte)back.R, (byte)back.G, (byte)back.B);
     }
 

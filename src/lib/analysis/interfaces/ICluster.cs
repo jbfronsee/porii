@@ -1,4 +1,4 @@
-namespace Lib.Analysis;
+namespace Lib.Analysis.Interfaces;
 
 public interface ICluster<T, U> where U: ICluster<T, U>
 {

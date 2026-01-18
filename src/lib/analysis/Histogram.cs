@@ -1,7 +1,6 @@
 using Lib.Analysis.Interfaces;
 using Lib.Colors;
 using Lib.Colors.Interfaces;
-using Lib.SimpleColor;
 
 namespace Lib.Analysis;
 
@@ -16,7 +15,6 @@ public enum FilterStrength
     High
 }
 
-
 public abstract class Histogram<T, U>: KMeans<T, U>, IHistogram<T>
     where T: class, IEntry<U, T>
     where U: IColorVector<double>, IEquatable<U>
@@ -25,11 +23,11 @@ public abstract class Histogram<T, U>: KMeans<T, U>, IHistogram<T>
 
     protected const double OriginalEpsilonResolution = 1920 * 1080;
 
-    protected const double LowEpsilon = 1.5e-3 / OriginalEpsilonResolution;
+    protected const double LowEpsilon = 2.0e-3 / OriginalEpsilonResolution;
 
-    protected const double MediumEpsilon = 1.5e-2 / OriginalEpsilonResolution;
+    protected const double MediumEpsilon = 2.0e-2 / OriginalEpsilonResolution;
 
-    protected const double HighEpsilon = 1.5e-1 / OriginalEpsilonResolution;
+    protected const double HighEpsilon = 2.0e-1 / OriginalEpsilonResolution;
 
     public override T[] Clusters { get; set; } = new T[BucketCount];
 
@@ -37,13 +35,13 @@ public abstract class Histogram<T, U>: KMeans<T, U>, IHistogram<T>
 
     public int TotalPixelsCounted { get; set; } = 0;
 
-    public override void Cluster(SimpleColor.Rgb[] pixels)
+    public override void Cluster(ColorRgb[] pixels)
     {
         TotalPixelsCounted = pixels.Length;
         base.Cluster(pixels);
     }
 
-    public override void ClusterParallel(SimpleColor.Rgb[] pixels)
+    public override void ClusterParallel(ColorRgb[] pixels)
     {
         TotalPixelsCounted = pixels.Length;
         base.ClusterParallel(pixels);
@@ -103,16 +101,16 @@ public abstract class Histogram<T, U>: KMeans<T, U>, IHistogram<T>
 
 public class HistogramLab : Histogram<EntryLab, VectorLab>
 {
-    public Dictionary<SimpleColor.Rgb, Lib.Colors.PackedLab> Colormap { get; set; } = [];
+    public Dictionary<ColorRgb, PackedLab> Colormap { get; set; } = [];
 
     public HistogramLab() {}
 
-    public HistogramLab(Dictionary<Rgb, Colors.PackedLab> colormap)
+    public HistogramLab(Dictionary<ColorRgb, PackedLab> colormap)
     {
         Colormap = colormap;
     }
 
-    protected override VectorLab UnpackPixel(Rgb pixel)
+    protected override VectorLab UnpackPixel(ColorRgb pixel)
     {
         return Colormap[pixel].Unpack();
     }
