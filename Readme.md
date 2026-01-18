@@ -1,6 +1,6 @@
 # Introduction
 
-`px-swatch` generates a palette from a JPG or PNG image using Magick.NET
+`pori` generates a palette from a JPG or PNG image using Magick.NET
 and Unicolour. It can output to PNG for visualization and sampling or GPL
 format for importing into GIMP or Krita.
 
@@ -11,7 +11,7 @@ format for importing into GIMP or Krita.
     - Linux RID: `linux-x64`
     - Windows RID: `win-x64`
 2. Run Project
-    - `./bin/publish/<RID>/px-swatch [Input File] [Flags]`
+    - `./bin/publish/<RID>/pori [Input File] [Flags]`
 
 # Options
 
@@ -31,10 +31,10 @@ the histogram as seed values.
 
 # Examples
 
-`px-swatch Ring.jpeg -o Palette.png`
+`pori Ring.jpeg -o Palette.png`
 
 <img width="512" height="128" alt="Ring" src="https://github.com/user-attachments/assets/c796002e-c0e4-4069-b3f4-825d21f42402" />
 
-`px-swatch Flowers.jpg -p | chafa -f kitty`
+`pori Flowers.jpg -p | chafa -f kitty`
 
 <img width="512" height="128" alt="Flowers" src="https://github.com/user-attachments/assets/62e8ae03-60b8-4a92-9ce6-bf1debc82430" />
