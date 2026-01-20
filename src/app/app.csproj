@@ -9,7 +9,7 @@
     <SelfContained>true</SelfContained>
     <PublishTrimmed>true</PublishTrimmed>
     <PublishDir>..\..\bin\publish\$(RuntimeIdentifier)</PublishDir>
-    <AssemblyName>pori</AssemblyName>
+    <AssemblyName>porii</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

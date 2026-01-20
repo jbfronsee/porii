@@ -1,22 +1,33 @@
 using ImageMagick;
 
 using App.Extensions;
+using App.Io;
 using Lib.Analysis;
+using Lib.Analysis.Interfaces;
 using Lib.Colors;
 
 namespace App.Core;
 
 public static class Palette
 {
+    private static IMagickImage<byte> GetCopiedSample(IMagickImage<byte> image, double largePixelCount)
+    {
+        double imageLength = image.Width * image.Height;
+        
+        IMagickImage<byte> sample = image.Clone();
+        sample.Sample(new Percentage(100 / Math.Sqrt(imageLength / largePixelCount)));
+        return sample;
+    }
+
     /// <summary>
     /// Creates Palette from pixels using Histogram
     /// </summary>
     /// 
     /// <param name="pixels">The pixels of the image in HSV space.</param>
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
-    public static HistogramLab CalculateHistogramFromPixels(ColorRgb[] pixels, Dictionary<ColorRgb, PackedLab> colormap, Buckets buckets)
+    public static IHistogramLab CalculateHistogramFromPixels(ColorRgb[] pixels, Dictionary<ColorRgb, PackedLab> colormap, Buckets buckets)
     {
-        HistogramLab histogram = new(colormap);
+        KMeansHistogramLab histogram = new(colormap);
 
         int j = 0;
         foreach (var bucket in buckets.PaletteLab())
@@ -27,13 +38,12 @@ public static class Palette
             j++;
         }
 
-        histogram.Cluster(pixels);
+        histogram.CalculateHistogram(pixels);
 
         return histogram;
     }
 
-
-    public static HistogramLab CalculateHistogram(IMagickImage<byte> image, Buckets buckets)
+    public static IHistogramLab CalculateHistogram(IMagickImage<byte> image, Buckets buckets)
     {
         ColorRgb[] pixels = new ColorRgb[image.Width * image.Height];
         
@@ -64,15 +74,14 @@ public static class Palette
     /// <param name="tolerances">The tolerances that represent threshold for histogram to find a match.</param>
     /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
-    public static HistogramLab CalculateHistogramFromSample(IMagickImage<byte> image, Buckets buckets)
+    public static IHistogramLab CalculateHistogramFromSample(IMagickImage<byte> image, Buckets buckets)
     {
         double largePixels = 640 * 480;
         double imageLength = image.Width * image.Height;
 
         if (imageLength > largePixels)
         {
-            using var sample = image.Clone();
-            sample.Sample(new Percentage(100 / Math.Sqrt(imageLength / largePixels)));
+            using var sample = GetCopiedSample(image, largePixels);
             return CalculateHistogram(sample, buckets);
         }
         
@@ -86,33 +95,21 @@ public static class Palette
     /// <param name="seeds">The seed values to make initial clusters from.</param>
     /// <param name="verbose">Flag that enables printing K-Means progress message.</param>
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
-    public static List<IMagickColor<byte>> FromPixelsKmeans(ColorRgb[] pixels, List<IMagickColor<byte>> seeds, Dictionary<ColorRgb, PackedLab> colormap, bool verbose = false)
-    {        
-        int maxIterations = 32;
+    public static List<IMagickColor<byte>> FromPixelsKmeans(
+        ColorRgb[] pixels,
+        List<IMagickColor<byte>> seeds,
+        Dictionary<ColorRgb, PackedLab> colormap,
+        bool parallelize = false,
+        bool verbose = false
+    )
+    { 
         KMeansLab kmeans = new(seeds.Select(Colors.Convert.ToLab).Select(c => new ClusterLab(c, c, 0)).ToArray(), colormap);
 
-        if (verbose)
-        {
-            Console.WriteLine($"K-Means Cluster Index: ");
-        }
+        Format.WriteLineIf(verbose, $"K-Means Cluster Index: ");
 
-        bool finished = false;
-        for (int i = 0; (i < maxIterations) && !finished; i++)
+        foreach (var index in kmeans.BestClustersWithProgress(pixels, 32, parallelize))
         {
-            if (verbose)
-            {
-                Console.WriteLine(i);
-            }
-
-            kmeans.ClusterParallel(pixels);
-    
-            finished = true;
-            foreach (var cluster in kmeans.Clusters)
-            {
-                finished = finished && (ColorMath.CalculateDistance(cluster.Cluster, cluster.Mean) <= 1.0);
-                
-                cluster.Cluster = cluster.Mean;
-            }
+            Format.WriteLineIf(verbose, $"{index}");
         }
 
         List<ColorHsv> palette = kmeans.Clusters.Select(c => Colors.Convert.ToHsv(c.Mean)).ToList();
@@ -129,7 +126,13 @@ public static class Palette
     /// <param name="verbose">Flag that enables printing K-Means progress message.</param>
     /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
     /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
-    public static List<IMagickColor<byte>> FromImageKmeans(IMagickImage<byte> image, List<IMagickColor<byte>> seeds, Dictionary<ColorRgb, PackedLab>? colormap = null,  bool verbose = false)
+    public static List<IMagickColor<byte>> FromImageKmeans(
+        IMagickImage<byte> image,
+        List<IMagickColor<byte>> seeds,
+        Dictionary<ColorRgb, PackedLab>? colormap = null,
+        bool parallelize = false,
+        bool verbose = false
+    )
     {
         colormap ??= [];
 
@@ -152,6 +155,33 @@ public static class Palette
             }
         }
 
-        return FromPixelsKmeans(pixels, seeds, colormap, verbose);
+        return FromPixelsKmeans(pixels, seeds, colormap, parallelize, verbose);
+    }
+
+    /// <summary>
+    /// Generates a palette using K-Means Clustering.
+    /// </summary>
+    /// <param name="image">The image to generate from.</param>
+    /// <param name="seeds">The seed values to make initial clusters from.</param>
+    /// <param name="verbose">Flag that enables printing K-Means progress message.</param>
+    /// <exception cref="MagickException">Thrown when an error is raised by ImageMagick.</exception>
+    /// <returns>The palette as a list of MagickColors ordered by Hue then Saturation then Value.</returns>
+    public static List<IMagickColor<byte>> FromImage(
+        IMagickImage<byte> image,
+        List<IMagickColor<byte>> seeds,
+        double largePixelCount,
+        Dictionary<ColorRgb, PackedLab>? colormap = null,
+        bool verbose = false
+    )
+    {
+        double imageLength = image.Width * image.Height;
+
+        if (imageLength > largePixelCount)
+        {
+            using var sample = GetCopiedSample(image, largePixelCount);
+            return FromImageKmeans(sample, seeds, colormap, true, verbose);
+        }
+        
+        return FromImageKmeans(image, seeds, colormap, true, verbose);
     }
 }

@@ -15,7 +15,7 @@ public enum FilterStrength
     High
 }
 
-public abstract class Histogram<T, U>: KMeans<T, U>, IHistogram<T>
+public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T>
     where T: class, IEntry<U, T>
     where U: IColorVector<double>, IEquatable<U>
 {
@@ -35,16 +35,16 @@ public abstract class Histogram<T, U>: KMeans<T, U>, IHistogram<T>
 
     public int TotalPixelsCounted { get; set; } = 0;
 
-    public override void Cluster(ColorRgb[] pixels)
+    public void CalculateHistogram(ColorRgb[] pixels)
     {
         TotalPixelsCounted = pixels.Length;
-        base.Cluster(pixels);
+        Cluster(pixels);
     }
 
-    public override void ClusterParallel(ColorRgb[] pixels)
+    public void CalculateHistogramParallel(ColorRgb[] pixels)
     {
         TotalPixelsCounted = pixels.Length;
-        base.ClusterParallel(pixels);
+        ClusterParallel(pixels);
     }
 
     protected List<T> Palette(T[] entries)
@@ -99,13 +99,13 @@ public abstract class Histogram<T, U>: KMeans<T, U>, IHistogram<T>
 }
 
 
-public class HistogramLab : Histogram<EntryLab, VectorLab>
+public class KMeansHistogramLab : KMeansHistogram<EntryLab, VectorLab>, IHistogramLab
 {
     public Dictionary<ColorRgb, PackedLab> Colormap { get; set; } = [];
 
-    public HistogramLab() {}
+    public KMeansHistogramLab() {}
 
-    public HistogramLab(Dictionary<ColorRgb, PackedLab> colormap)
+    public KMeansHistogramLab(Dictionary<ColorRgb, PackedLab> colormap)
     {
         Colormap = colormap;
     }

@@ -1,6 +1,6 @@
 # Introduction
 
-`pori` generates a palette from a JPG or PNG image using Magick.NET
+`porii` generates a palette from a JPG or PNG image using Magick.NET
 and Unicolour. It can output to PNG for visualization and sampling or GPL
 format for importing into GIMP or Krita.
 
@@ -11,7 +11,7 @@ format for importing into GIMP or Krita.
     - Linux RID: `linux-x64`
     - Windows RID: `win-x64`
 2. Run Project
-    - `./bin/publish/<RID>/pori [Input File] [Flags]`
+    - `./bin/publish/<RID>/porii [Input File] [Flags]`
 
 # Options
 
@@ -31,10 +31,14 @@ the histogram as seed values.
 
 # Examples
 
-`pori Ring.jpeg -o Palette.png`
+`porii Ring.jpeg -o Palette.png`
 
-<img width="512" height="128" alt="Ring" src="https://github.com/user-attachments/assets/c796002e-c0e4-4069-b3f4-825d21f42402" />
+<img width="512" height="128" alt="Ring-Out" src="https://github.com/user-attachments/assets/c29ec258-4b58-4e08-900c-003e67ccc9f2" />
 
-`pori Flowers.jpg -p | chafa -f kitty`
+`porii Colors.jpeg -p | chafa -f kitty`
 
-<img width="512" height="128" alt="Flowers" src="https://github.com/user-attachments/assets/62e8ae03-60b8-4a92-9ce6-bf1debc82430" />
+<img width="512" height="128" alt="colors-out" src="https://github.com/user-attachments/assets/dc2b9af4-0e7d-460a-91f8-f3361166ef27" />
+
+`porii Portrait.png -o Palette.png`
+
+<img width="512" height="128" alt="portrait-palette" src="https://github.com/user-attachments/assets/85e8c48c-b76b-4151-a8d9-b12f9bed774c" />

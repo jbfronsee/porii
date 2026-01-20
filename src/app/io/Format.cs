@@ -8,6 +8,15 @@ public class Format
     private static readonly string mLineSeparator = new('-', 60);
     
     public static string LineSeparator => mLineSeparator;
+
+
+    public static void WriteLineIf(bool condition, string message)
+    {
+        if (condition)
+        {
+            Console.WriteLine(message);
+        }
+    }
     
     /// <summary>
     /// Formats palette as a GPL file for importing into software like GIMP and Krita.

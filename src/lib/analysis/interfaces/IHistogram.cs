@@ -6,6 +6,10 @@ public interface IHistogram<T>
 
     public int TotalPixelsCounted { get; set; }
 
+    public void CalculateHistogram(ColorRgb[] pixels);
+
+    public void CalculateHistogramParallel(ColorRgb[] pixels);
+
     public List<T> Palette();
 
     public List<T> PaletteWithFilter(FilterStrength filter = FilterStrength.Medium);

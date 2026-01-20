@@ -86,6 +86,32 @@ public abstract class KMeans<T, U> : IKMeans<T>
             ).ToArray();
         }
     }
+
+    public virtual IEnumerable<int> BestClustersWithProgress(ColorRgb[] pixels, int maxIterations, bool parallelize = false)
+    {
+        bool finished = false;
+        for (int i = 0; (i < maxIterations) && !finished; i++)
+        {
+            yield return i;
+
+            if (parallelize)
+            {
+                ClusterParallel(pixels);
+            }
+            else
+            {
+                Cluster(pixels);
+            }
+
+            finished = true;
+            foreach (var cluster in Clusters)
+            {
+                finished = finished && (ColorMath.CalculateDistance(cluster.Cluster, cluster.Mean) <= 1.0);
+                
+                cluster.Cluster = cluster.Mean;
+            }
+        }
+    }
 }
 
 public class KMeansLab : KMeans<ClusterLab, VectorLab>

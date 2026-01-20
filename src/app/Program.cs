@@ -5,7 +5,7 @@ using Wacton.Unicolour;
 
 using App.Core;
 using App.Io;
-using Lib.Analysis;
+using Lib.Analysis.Interfaces;
 using Lib.Colors;
 
 namespace App;
@@ -24,11 +24,11 @@ internal class Program
         }
     }
 
-    public static void GeneratePalette(Options opts, IMagickImage<byte> image, Buckets buckets, IMagickImage<byte>? originalImage = null)
+    public static void GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets, IMagickImage<byte>? originalImage = null)
     {
         originalImage ??= image;
 
-        HistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
+        IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
         
         List<VectorLab> paletteLab = histogram
             .PaletteWithFilter(opts.FilterLevel)
@@ -50,7 +50,7 @@ internal class Program
 
         if (!opts.HistogramOnly)
         {
-            palette = Palette.FromImageKmeans(image, palette, histogram.Colormap, opts.Verbose || opts.Print);
+            palette = Palette.FromImage(image, palette, largePixelCount, histogram.Colormap, opts.Verbose || opts.Print);
 
             if (opts.Print)
             {
@@ -104,7 +104,7 @@ internal class Program
 
             using MagickImage paletteImage = Format.AsPng(palette);
 
-            if (opts.RemapImage)
+            if (opts.RemapImage && opts.PrintImage)
             {
                 var settings = new QuantizeSettings();
                 settings.ColorSpace = ColorSpace.Lab;
@@ -130,7 +130,7 @@ internal class Program
         bool hasErrors = false;
         if (string.IsNullOrEmpty(opts.InputFile))
         {
-            Console.WriteLine("Usage: px-swatch [InputFile] [Flags]");
+            Console.WriteLine("Usage: porii [InputFile] [Flags]");
             hasErrors = true;
         }
         else if (opts.Print == false && opts.PrintImage == false && string.IsNullOrEmpty(opts.OutputFile))
@@ -154,7 +154,7 @@ internal class Program
 
     public static (Buckets, string) ReadBuckets(IConfigurationRoot config, bool verbose)
     {
-        (Buckets buckets, string errorMessage) = Config.GetBuckets(config.GetSection("Buckets"));
+        Buckets buckets = Config.GetBuckets(config);
 
         (bool bucketValid, string bucketMessage) = buckets.Validate();
         if (!bucketValid)
@@ -183,10 +183,13 @@ internal class Program
                 .Build();
 
             (Buckets buckets, string errorMessage) = ReadBuckets(config, opts.Verbose);
+            ((int sampleX, int sampleY), errorMessage) = Config.GetSampleDimensions(config);
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 return;
             }
+
+            double largePixelCount = sampleX * sampleY;
             
             using MagickImage inputImage = new(opts.InputFile);
 
@@ -203,11 +206,11 @@ internal class Program
             {
                 using IMagickImage<byte> sampled = inputImage.Clone();
                 sampled.Sample(new Percentage(opts.ResizePercentage));
-                GeneratePalette(opts, sampled, buckets, inputImage);
+                GeneratePalette(opts, sampled, largePixelCount, buckets, inputImage);
             }
             else
             {
-                GeneratePalette(opts, inputImage, buckets);
+                GeneratePalette(opts, inputImage, largePixelCount, buckets);
             }
         }
         catch (MagickBlobErrorException mbee)
