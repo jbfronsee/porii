@@ -33,10 +33,12 @@ the histogram as seed values.
 
 `porii Ring.jpeg -o Palette.png`
 
-<img width="512" height="128" alt="Ring" src="https://github.com/user-attachments/assets/c796002e-c0e4-4069-b3f4-825d21f42402" />
+<img width="512" height="128" alt="Ring-Out" src="https://github.com/user-attachments/assets/c29ec258-4b58-4e08-900c-003e67ccc9f2" />
 
-`porii Flowers.jpg -p | chafa -f kitty`
+`porii Colors.jpeg -p | chafa -f kitty`
 
-<img width="512" height="128" alt="Flowers" src="https://github.com/user-attachments/assets/62e8ae03-60b8-4a92-9ce6-bf1debc82430" />
+<img width="512" height="128" alt="colors-out" src="https://github.com/user-attachments/assets/dc2b9af4-0e7d-460a-91f8-f3361166ef27" />
 
-`porii Colors.jpeg -o Palette.png`
+`porii Portrait.png -o Palette.png`
+
+<img width="512" height="128" alt="portrait-palette" src="https://github.com/user-attachments/assets/85e8c48c-b76b-4151-a8d9-b12f9bed774c" />
