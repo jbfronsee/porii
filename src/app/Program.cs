@@ -104,7 +104,7 @@ internal class Program
 
             using MagickImage paletteImage = Format.AsPng(palette);
 
-            if (opts.RemapImage)
+            if (opts.RemapImage && opts.PrintImage)
             {
                 var settings = new QuantizeSettings();
                 settings.ColorSpace = ColorSpace.Lab;
@@ -130,7 +130,7 @@ internal class Program
         bool hasErrors = false;
         if (string.IsNullOrEmpty(opts.InputFile))
         {
-            Console.WriteLine("Usage: px-swatch [InputFile] [Flags]");
+            Console.WriteLine("Usage: porii [InputFile] [Flags]");
             hasErrors = true;
         }
         else if (opts.Print == false && opts.PrintImage == false && string.IsNullOrEmpty(opts.OutputFile))
