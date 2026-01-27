@@ -114,13 +114,13 @@ public abstract class KMeans<T, U> : IKMeans<T>
     }
 }
 
-public class KMeansLab : KMeans<ClusterLab, VectorLab>
+public class KMeansLab : KMeans<SafeClusterLab, VectorLab>
 {
     public Dictionary<ColorRgb, PackedLab> Colormap { get; set; } = [];
 
     public KMeansLab() {}
 
-    public KMeansLab(ClusterLab[] clusters, Dictionary<ColorRgb, PackedLab> colormap)
+    public KMeansLab(SafeClusterLab[] clusters, Dictionary<ColorRgb, PackedLab> colormap)
     {
         Clusters = clusters;
         Colormap = colormap;

@@ -3,10 +3,10 @@ using Lib.Colors;
 
 namespace Lib.Analysis;
 
-public abstract record SafeClusterLab<T> : ICluster<VectorLab, T>, IComparable<SafeClusterLab<T>>
+public abstract record ClusterLab<T> : ICluster<VectorLab, T>, IComparable<ClusterLab<T>>
     where T: ICluster<VectorLab, T>
 {
-    public SafeClusterLab(VectorLab cluster, VectorLab mean, int count)
+    public ClusterLab(VectorLab cluster, VectorLab mean, int count)
     {
         Cluster = cluster;
         Mean = mean;
@@ -19,7 +19,7 @@ public abstract record SafeClusterLab<T> : ICluster<VectorLab, T>, IComparable<S
 
     public int Count { get; set; }
 
-    public virtual int CompareTo(SafeClusterLab<T>? other)
+    public virtual int CompareTo(ClusterLab<T>? other)
     {
         if (other == null)
         {
@@ -32,12 +32,12 @@ public abstract record SafeClusterLab<T> : ICluster<VectorLab, T>, IComparable<S
     public abstract T ParallelSafeCopy();
 }
 
-public sealed record ClusterLab : SafeClusterLab<ClusterLab>
+public sealed record SafeClusterLab : ClusterLab<SafeClusterLab>
 {
-    public ClusterLab(VectorLab cluster, VectorLab mean, int count) : base(cluster, mean, count) { }
+    public SafeClusterLab(VectorLab cluster, VectorLab mean, int count) : base(cluster, mean, count) { }
     
-    public override ClusterLab ParallelSafeCopy()
+    public override SafeClusterLab ParallelSafeCopy()
     {
-        return new ClusterLab(Cluster, Mean, Count);
+        return new SafeClusterLab(Cluster, Mean, Count);
     }
 }

@@ -103,7 +103,7 @@ public static class Palette
         bool verbose = false
     )
     { 
-        KMeansLab kmeans = new(seeds.Select(Colors.Convert.ToLab).Select(c => new ClusterLab(c, c, 0)).ToArray(), colormap);
+        KMeansLab kmeans = new(seeds.Select(Colors.Convert.ToLab).Select(c => new SafeClusterLab(c, c, 0)).ToArray(), colormap);
 
         Format.WriteLineIf(verbose, $"K-Means Cluster Index: ");
 

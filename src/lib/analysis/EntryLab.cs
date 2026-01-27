@@ -3,7 +3,7 @@ using Lib.Colors;
 
 namespace Lib.Analysis;
 
-public sealed record EntryLab : SafeClusterLab<EntryLab>, IEntry<VectorLab, EntryLab>
+public sealed record EntryLab : ClusterLab<EntryLab>, IEntry<VectorLab, EntryLab>
 {
     public EntryLab(VectorLab cluster, VectorLab mean, int count) : base(cluster, mean, count) { }
     
