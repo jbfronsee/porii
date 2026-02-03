@@ -13,6 +13,10 @@ public sealed class TestPackedLab
     // .002 Can provide close to 90 or 100k values between the AB bounds.
     private const double LargerEpsilonAB = .002;
 
+    ////////////////
+    // Pack
+    ////////////////
+
     [TestMethod]
     public void Test_Pack_Lab_Min()
     {
@@ -60,6 +64,44 @@ public sealed class TestPackedLab
         Assert.IsInRange(36554, 36555, actual.B);
     }
 
+    [TestMethod]
+    public void Test_Pack_Greater_Than()
+    {
+        // Calculated Max Values
+        VectorLab value = new
+        (
+            PackedLab.LMax * 2,
+            PackedLab.AMax * 2,
+            PackedLab.BMax * 2
+        );
+        PackedLab expected = new(ushort.MaxValue, ushort.MaxValue, ushort.MaxValue);
+
+        PackedLab actual = value.Pack();
+        
+        Assert.AreEqual(expected, actual);
+    }
+
+    [TestMethod]
+    public void Test_Pack_Less_Than()
+    {
+        // Calculated Max Values
+        VectorLab value = new
+        (
+            PackedLab.LMin - PackedLab.LMax,
+            PackedLab.AMin * 2,
+            PackedLab.BMin * 2
+        );
+        PackedLab expected = new(ushort.MinValue, ushort.MinValue, ushort.MinValue);
+
+        PackedLab actual = value.Pack();
+        
+        Assert.AreEqual(expected, actual);
+    }
+
+    ////////////////
+    // Unpack
+    ////////////////
+    
     private void Test_Unpack_Lab_Min_Logic(Func<PackedLab, VectorLab> unpackFunc)
     {
         PackedLab value = new(0, 0, 0);
@@ -143,6 +185,4 @@ public sealed class TestPackedLab
     {
         Test_Unpack_Lab_Middle_Logic(c => c.Unpack());
     }
-
-    //TODO add tests for values larger than max smaller than min
 }
