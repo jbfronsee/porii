@@ -29,9 +29,6 @@ public class Options
             case 'h':
                 HistogramOnly = true;
                 break;
-            case 'm':
-                RemapImage = true;
-                break;
             case 'o':
                 Print = false;
                 break;
@@ -87,13 +84,19 @@ public class Options
 
     public static Options GetOptions(string[] args)
     {
-        Options opts = new()
-        {
-            InputFile = args.FirstOrDefault("")
-        };
+        Options opts = new();
 
+        if (args.FirstOrDefault("") == "map")
+        {
+            opts.RemapImage = true;
+        }
+
+        opts.InputFile = args.Skip(1).FirstOrDefault("");
+
+        // TODO temp solution
+        bool isSecondFile = true;
         char? pairFlag = null;
-        foreach (string arg in args.Skip(1))
+        foreach (string arg in args.Skip(2))
         {
             if (pairFlag is not null)
             {
@@ -109,11 +112,17 @@ public class Options
                     pairFlag = flag;
                 }
             }
+            else if (isSecondFile)
+            {
+                opts.RemapFile = arg;
+            }
             else
             {
                 opts.mInvalidArg = arg;
                 return opts;
             }
+
+            isSecondFile = false;
         }
 
         if (pairFlag is not null)
@@ -134,6 +143,7 @@ public class Options
         InputFile = "";
         OutputFile = "";
         HistogramOnly = false;
+        RemapFile = "";
         RemapImage = false;
         Print = true;
         PrintImage = false;
@@ -154,6 +164,8 @@ public class Options
     public bool HistogramOnly { get; set; }
 
     public string InvalidArg => mInvalidArg;
+
+    public string RemapFile { get; set; }
 
     public bool RemapImage { get; set; }
 

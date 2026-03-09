@@ -84,6 +84,7 @@ internal class Program
         }
         else
         {
+            // TODO cleanup
             if (opts.DisplayBins)
             {
 
@@ -104,13 +105,23 @@ internal class Program
 
             using MagickImage paletteImage = Format.AsPng(palette);
 
+            // TODO refine
             if (opts.RemapImage && opts.PrintImage)
             {
                 var settings = new QuantizeSettings();
                 settings.ColorSpace = ColorSpace.Lab;
                 settings.DitherMethod = DitherMethod.FloydSteinberg;
-                originalImage.Remap(palette, settings);
-                originalImage.Write(Console.OpenStandardOutput());
+                if (string.IsNullOrEmpty(opts.RemapFile))
+                {
+                    originalImage.Remap(palette, settings);
+                    originalImage.Write(Console.OpenStandardOutput());
+                }
+                else
+                {
+                    using MagickImage remapImage = new(opts.RemapFile);
+                    remapImage.Remap(palette, settings);
+                    remapImage.Write(Console.OpenStandardOutput());
+                }
                 return;
             }
 
