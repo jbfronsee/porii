@@ -15,7 +15,7 @@ public enum FilterStrength
     High
 }
 
-public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T>
+public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T, U>
     where T: class, IEntry<U, T>
     where U: IColorVector<double>, IEquatable<U>
 {
@@ -47,7 +47,7 @@ public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T>
         ClusterParallel(pixels);
     }
 
-    protected List<T> Palette(T[] entries)
+    protected List<T> UniqueEntries(T[] entries)
     {
         List<T> matches = [];
         for (int i = 0, j = 1, k = 2; k < entries.Length; i++, j++, k++)
@@ -75,15 +75,36 @@ public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T>
         };
     }
 
-    public List<T> Palette()
+    public List<T> UniqueEntries()
     {
-        return Palette(Results);
+        return UniqueEntries(Results);
     }
 
-    public List<T> PaletteWithFilter(FilterStrength strength = FilterStrength.Medium)
+    public List<T> FilteredEntries(FilterStrength strength = FilterStrength.Medium)
     {
-        T[] largeValues = Results.Where(e => e.Count > (TotalPixelsCounted * GetFilterEpsilon(strength))).ToArray();
-        return Palette(largeValues);
+        T[] largeValues = [.. Results.Where(e => e.Count > (TotalPixelsCounted * GetFilterEpsilon(strength)))];
+        return UniqueEntries(largeValues);
+    }
+
+    public List<U> FilteredPalette(FilterStrength strength = FilterStrength.Medium)
+    {
+        List<U> filtered = [.. FilteredEntries(strength)
+            .DistinctBy(e => e.Mean)
+            .OrderByDescending(e => e.Count)
+            .Select(c => c.Mean)
+            .Take(16)
+        ];
+
+        if (filtered.Count < 16)
+        {
+            var moreColors = UniqueEntries()
+                .Where(p => !filtered.Contains(p.Mean))
+                .Select(e => e.Mean);
+
+            filtered = [.. filtered.Concat(moreColors).Take(16)];
+        }
+
+        return filtered;
     }
 
     public override string ToString()
@@ -97,7 +118,6 @@ public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T>
         return result;
     }
 }
-
 
 public class KMeansHistogramLab : KMeansHistogram<EntryLab, VectorLab>, IHistogramLab
 {

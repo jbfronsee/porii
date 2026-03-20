@@ -70,7 +70,10 @@ public class Options
                 Verbose = true;
                 break;
             default:
-                mInvalidArg = $"-{flag} is not a flag.";
+                if (!IsPairFlag(flag))
+                {
+                    mInvalidArg = $"-{flag} is not a flag.";
+                }
                 break;
         }
     }

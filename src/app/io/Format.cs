@@ -3,12 +3,11 @@ using ImageMagick.Drawing;
 
 namespace App.Io;
 
-public class Format
+public static class Format
 {
     private static readonly string mLineSeparator = new('-', 60);
     
     public static string LineSeparator => mLineSeparator;
-
 
     public static void WriteLineIf(bool condition, string message)
     {

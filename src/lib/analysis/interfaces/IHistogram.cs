@@ -1,6 +1,10 @@
+using Lib.Colors.Interfaces;
+
 namespace Lib.Analysis.Interfaces;
 
-public interface IHistogram<T>
+public interface IHistogram<T, U>
+    where T: class, IEntry<U, T>
+    where U: IColorVector<double>, IEquatable<U>
 {
     public T[] Results { get; }
 
@@ -10,7 +14,9 @@ public interface IHistogram<T>
 
     public void CalculateHistogramParallel(ColorRgb[] pixels);
 
-    public List<T> Palette();
+    public List<T> UniqueEntries();
 
-    public List<T> PaletteWithFilter(FilterStrength filter = FilterStrength.Medium);
+    public List<T> FilteredEntries(FilterStrength filter = FilterStrength.Medium);
+
+    public List<U> FilteredPalette(FilterStrength strength = FilterStrength.Medium);
 }
