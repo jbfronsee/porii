@@ -30,6 +30,7 @@ internal class Program
 
         IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
         
+        //TODO clean up
         List<VectorLab> paletteLab = histogram
             .PaletteWithFilter(opts.FilterLevel)
             .DistinctBy(e => e.Mean)

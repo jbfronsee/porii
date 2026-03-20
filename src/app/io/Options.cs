@@ -15,6 +15,36 @@ public class Options
         return flags.Contains(flag);
     }
 
+    public static Options GetOptions(string[] args)
+    {
+        Options opts = new();
+        string[] remaining = [.. opts.HandleSubCommand(args), ""];
+
+        for (int i = 0; (i + 1) < remaining.Length; i++)
+        {
+            string arg = remaining[i];
+            string nextArg = remaining[i + 1];
+
+            if (IsFlag(arg))
+            {
+                char flag = arg[1];
+                opts.HandleFlag(flag);
+                if (IsPairFlag(flag))
+                {
+                    opts.HandlePairFlag(flag, nextArg);
+                    i++;
+                }
+            }
+            else
+            {
+                opts.mInvalidArg = arg;
+                return opts;
+            }
+        }
+
+        return opts;
+    }
+
     private void HandleFlag(char flag)
     {
         switch (flag)
@@ -39,6 +69,9 @@ public class Options
             case 'v':
                 Verbose = true;
                 break;
+            default:
+                mInvalidArg = $"-{flag} is not a flag.";
+                break;
         }
     }
 
@@ -46,7 +79,7 @@ public class Options
     {
         if (IsFlag(arg) || string.IsNullOrEmpty(arg))
         {
-            mInvalidArg = $"Missing operand for {flag}";
+            mInvalidArg = $"Missing operand for {flag}.";
             return;
         }
 
@@ -80,58 +113,22 @@ public class Options
         }
     }
 
-    private string mInvalidArg;
-
-    public static Options GetOptions(string[] args)
+    private IEnumerable<string> HandleSubCommand(string[] args)
     {
-        Options opts = new();
-
-        if (args.FirstOrDefault("") == "map")
+        switch (args.FirstOrDefault(""))
         {
-            opts.RemapImage = true;
+            case "map":
+                RemapImage = true;
+                InputFile = args.Skip(1).FirstOrDefault("");
+                RemapFile = args.Skip(2).FirstOrDefault("");
+                return args.Skip(3);
+            default:
+                InputFile = args.FirstOrDefault("");
+                return args.Skip(1);
         }
-
-        opts.InputFile = args.Skip(1).FirstOrDefault("");
-
-        // TODO temp solution
-        bool isSecondFile = true;
-        char? pairFlag = null;
-        foreach (string arg in args.Skip(2))
-        {
-            if (pairFlag is not null)
-            {
-                opts.HandlePairFlag(pairFlag.Value, arg);
-                pairFlag = null;
-            }
-            else if (IsFlag(arg))
-            {
-                char flag = arg[1];
-                opts.HandleFlag(flag);
-                if (IsPairFlag(flag))
-                {
-                    pairFlag = flag;
-                }
-            }
-            else if (isSecondFile)
-            {
-                opts.RemapFile = arg;
-            }
-            else
-            {
-                opts.mInvalidArg = arg;
-                return opts;
-            }
-
-            isSecondFile = false;
-        }
-
-        if (pairFlag is not null)
-        {
-            opts.HandlePairFlag(pairFlag.Value, "");
-        }
-
-        return opts;
     }
+
+    private string mInvalidArg;
 
     public Options()
     {
