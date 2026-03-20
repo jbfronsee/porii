@@ -120,8 +120,15 @@ public class Options
             case "map":
                 RemapImage = true;
                 InputFile = args.Skip(1).FirstOrDefault("");
-                RemapFile = args.Skip(2).FirstOrDefault("");
-                return args.Skip(3);
+                
+                string secondArg = args.Skip(2).FirstOrDefault("");
+                if (!IsFlag(secondArg))
+                {
+                    RemapFile = secondArg;
+                    return args.Skip(3);
+                }
+
+                return args.Skip(2);
             default:
                 InputFile = args.FirstOrDefault("");
                 return args.Skip(1);
@@ -140,7 +147,7 @@ public class Options
         InputFile = "";
         OutputFile = "";
         HistogramOnly = false;
-        RemapFile = "";
+        RemapFile = null;
         RemapImage = false;
         Print = true;
         PrintImage = false;
@@ -162,7 +169,7 @@ public class Options
 
     public string InvalidArg => mInvalidArg;
 
-    public string RemapFile { get; set; }
+    public string? RemapFile { get; set; }
 
     public bool RemapImage { get; set; }
 

@@ -88,7 +88,6 @@ internal class Program
             // TODO cleanup
             if (opts.DisplayBins)
             {
-
                 List<ColorHsv> colors2 = buckets.PaletteHsv().ToList();
 
                 List<IMagickColor<byte>> palette2 = [];
@@ -101,38 +100,23 @@ internal class Program
 
                 using MagickImage bins = Format.AsPng2(palette2);
                 bins.Write(Console.OpenStandardOutput());
-                return;
             }
-
-            using MagickImage paletteImage = Format.AsPng(palette);
-
-            // TODO refine
-            if (opts.RemapImage && opts.PrintImage)
+            else if (opts.RemapImage)
             {
-                var settings = new QuantizeSettings();
-                settings.ColorSpace = ColorSpace.Lab;
-                settings.DitherMethod = DitherMethod.FloydSteinberg;
-                if (string.IsNullOrEmpty(opts.RemapFile))
+                QuantizeSettings settings = new()
                 {
-                    originalImage.Remap(palette, settings);
-                    originalImage.Write(Console.OpenStandardOutput());
-                }
-                else
-                {
-                    using MagickImage remapImage = new(opts.RemapFile);
-                    remapImage.Remap(palette, settings);
-                    remapImage.Write(Console.OpenStandardOutput());
-                }
-                return;
-            }
+                    ColorSpace = ColorSpace.Lab,
+                    DitherMethod = DitherMethod.FloydSteinberg
+                };
 
-            if (opts.PrintImage)
-            {
-                paletteImage.Write(Console.OpenStandardOutput());
+                using MagickImage remapImage = new(opts.RemapFile ?? opts.InputFile);
+                remapImage.Remap(palette, settings);
+                OutputImage(remapImage, opts);
             }
-            else
+            else 
             {
-                paletteImage.Write(opts.OutputFile);
+                using MagickImage paletteImage = Format.AsPng(palette);
+                OutputImage(paletteImage, opts);
             }
         }
     }
@@ -162,6 +146,18 @@ internal class Program
         }
 
         return hasErrors;
+    }
+
+    public static void OutputImage(MagickImage image, Options opts)
+    {
+        if (opts.PrintImage)
+        {
+            image.Write(Console.OpenStandardOutput());
+        }
+        else
+        {
+            image.Write(opts.OutputFile);
+        }
     }
 
     public static (Buckets, string) ReadBuckets(IConfigurationRoot config, bool verbose)
