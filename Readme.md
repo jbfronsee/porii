@@ -58,3 +58,17 @@ the histogram as seed values.
 `porii Portrait.png -o Palette.png`
 
 <img width="512" height="128" alt="portrait-palette" src="https://github.com/user-attachments/assets/85e8c48c-b76b-4151-a8d9-b12f9bed774c" />
+
+### Map Subcommand
+
+`porii map palette.png lorikeet.jpg -o result.png`
+
+lorikeet.jpg
+
+<img width="480" height="720" alt="result" src="https://github.com/user-attachments/assets/e7e8ddfd-0df6-4553-ba87-bf11ebca16a8" />
+
+result.png
+
+<img width="480" height="720" alt="result" src="https://github.com/user-attachments/assets/5271dabc-dd56-428a-9e73-c90ec729d08c" />
+
+"Rainbow_lorikeet.jpg" by Fir0002/Flagstaffotos is licensed under CC BY-NC. https://en.wikipedia.org/wiki/File:Rainbow_lorikeet.jpg
