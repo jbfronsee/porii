@@ -9,7 +9,7 @@ public enum FilterStrength
     Undefined,
 
     Low,
-    
+
     Medium,
 
     High

@@ -48,7 +48,7 @@ internal class Program
             Console.WriteLine("Usage: porii [InputFile] [Flags]");
             hasErrors = true;
         }
-        else if (opts.Print == false && opts.PrintImage == false && string.IsNullOrEmpty(opts.OutputFile))
+        else if (!opts.Print && !opts.PrintImage && string.IsNullOrEmpty(opts.OutputFile))
         {
             Console.WriteLine("Missing output file specified with -o [Filepath]");
             hasErrors = true;
@@ -61,6 +61,11 @@ internal class Program
         else if (opts.ResizePercentage > 100 || opts.ResizePercentage <= 0)
         {
             Console.WriteLine($"-r value must be between 0 and 100");
+            hasErrors = true;
+        }
+        else if (opts.RemapImage && !opts.PrintImage && string.IsNullOrEmpty(opts.OutputFile))
+        {
+            Console.WriteLine($"Please specify -o or -p argument for map subcommand.");
             hasErrors = true;
         }
 
