@@ -15,6 +15,36 @@ public class Options
         return flags.Contains(flag);
     }
 
+    public static Options GetOptions(string[] args)
+    {
+        Options opts = new();
+        string[] remaining = [.. opts.HandleSubCommand(args), ""];
+
+        for (int i = 0; (i + 1) < remaining.Length; i++)
+        {
+            string arg = remaining[i];
+            string nextArg = remaining[i + 1];
+
+            if (IsFlag(arg))
+            {
+                char flag = arg[1];
+                opts.HandleFlag(flag);
+                if (IsPairFlag(flag))
+                {
+                    opts.HandlePairFlag(flag, nextArg);
+                    i++;
+                }
+            }
+            else
+            {
+                opts.mInvalidArg = arg;
+                return opts;
+            }
+        }
+
+        return opts;
+    }
+
     private void HandleFlag(char flag)
     {
         switch (flag)
@@ -29,9 +59,6 @@ public class Options
             case 'h':
                 HistogramOnly = true;
                 break;
-            case 'm':
-                RemapImage = true;
-                break;
             case 'o':
                 Print = false;
                 break;
@@ -42,6 +69,12 @@ public class Options
             case 'v':
                 Verbose = true;
                 break;
+            default:
+                if (!IsPairFlag(flag))
+                {
+                    mInvalidArg = $"-{flag} is not a flag.";
+                }
+                break;
         }
     }
 
@@ -49,7 +82,7 @@ public class Options
     {
         if (IsFlag(arg) || string.IsNullOrEmpty(arg))
         {
-            mInvalidArg = $"Missing operand for {flag}";
+            mInvalidArg = $"Missing operand for {flag}.";
             return;
         }
 
@@ -83,46 +116,29 @@ public class Options
         }
     }
 
-    private string mInvalidArg;
-
-    public static Options GetOptions(string[] args)
+    private IEnumerable<string> HandleSubCommand(string[] args)
     {
-        Options opts = new()
+        switch (args.FirstOrDefault(""))
         {
-            InputFile = args.FirstOrDefault("")
-        };
-
-        char? pairFlag = null;
-        foreach (string arg in args.Skip(1))
-        {
-            if (pairFlag is not null)
-            {
-                opts.HandlePairFlag(pairFlag.Value, arg);
-                pairFlag = null;
-            }
-            else if (IsFlag(arg))
-            {
-                char flag = arg[1];
-                opts.HandleFlag(flag);
-                if (IsPairFlag(flag))
+            case "map":
+                RemapImage = true;
+                InputFile = args.Skip(1).FirstOrDefault("");
+                
+                string secondArg = args.Skip(2).FirstOrDefault("");
+                if (!IsFlag(secondArg))
                 {
-                    pairFlag = flag;
+                    RemapFile = secondArg;
+                    return args.Skip(3);
                 }
-            }
-            else
-            {
-                opts.mInvalidArg = arg;
-                return opts;
-            }
-        }
 
-        if (pairFlag is not null)
-        {
-            opts.HandlePairFlag(pairFlag.Value, "");
+                return args.Skip(2);
+            default:
+                InputFile = args.FirstOrDefault("");
+                return args.Skip(1);
         }
-
-        return opts;
     }
+
+    private string mInvalidArg;
 
     public Options()
     {
@@ -134,6 +150,7 @@ public class Options
         InputFile = "";
         OutputFile = "";
         HistogramOnly = false;
+        RemapFile = null;
         RemapImage = false;
         Print = true;
         PrintImage = false;
@@ -154,6 +171,8 @@ public class Options
     public bool HistogramOnly { get; set; }
 
     public string InvalidArg => mInvalidArg;
+
+    public string? RemapFile { get; set; }
 
     public bool RemapImage { get; set; }
 

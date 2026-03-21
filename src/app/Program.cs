@@ -1,12 +1,10 @@
 ﻿using ImageMagick;
 using ImageMagick.Colors;
 using Microsoft.Extensions.Configuration;
-using Wacton.Unicolour;
 
 using App.Core;
 using App.Io;
 using Lib.Analysis.Interfaces;
-using Lib.Colors;
 
 namespace App;
 
@@ -24,105 +22,22 @@ internal class Program
         }
     }
 
-    public static void GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets, IMagickImage<byte>? originalImage = null)
+    public static void GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets)
     {
-        originalImage ??= image;
-
         IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
         
-        List<VectorLab> paletteLab = histogram
-            .PaletteWithFilter(opts.FilterLevel)
-            .DistinctBy(e => e.Mean)
-            .OrderByDescending(e => e.Count)
-            .Select(c => c.Mean)
-            .Take(16)
-            .ToList();
-
-        if (paletteLab.Count < 16)
-        {
-            paletteLab = paletteLab.Concat(histogram.Palette().Where(p => !paletteLab.Contains(p.Mean)).Select(e => e.Mean)).Take(16).ToList();
-        }
-
-        List<IMagickColor<byte>> palette = paletteLab.Select(Colors.Convert.ToHsv)
+        List<IMagickColor<byte>> palette = [.. histogram.FilteredPalette(opts.FilterLevel)
+            .Select(Colors.Convert.ToHsv)
             .OrderBy(c => c)
             .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
-            .ToList();
+        ];
 
         if (!opts.HistogramOnly)
         {
             palette = Palette.FromImage(image, palette, largePixelCount, histogram.Colormap, opts.Verbose || opts.Print);
-
-            if (opts.Print)
-            {
-                Console.WriteLine(Format.LineSeparator);
-            }
         }
 
-        if (opts.Print)
-        {
-            Console.WriteLine("Palette: ");
-            foreach(IMagickColor<byte> color in palette)
-            {
-                Console.WriteLine($"Color: {color.ToHexString()}");
-            }
-        }
-        else if (opts.AsGPL)
-        {
-
-            List<ColorHsv> colors = buckets.PaletteHsv().ToList();
-            
-            List<IMagickColor<byte>> palette2 = [];
-            
-            foreach (var color in colors)
-            {
-                var b = new Unicolour(ColourSpace.Hsb, color.H * 360, color.S, color.V).Rgb.Byte255;
-                palette2.Add(new MagickColor((byte)b.R, (byte)b.G, (byte)b.B));
-            }
-            
-            List<string> file = Format.AsGpl(palette, Path.GetFileNameWithoutExtension(opts.OutputFile));
-            File.WriteAllLines(opts.OutputFile, file);
-        }
-        else
-        {
-            if (opts.DisplayBins)
-            {
-
-                List<ColorHsv> colors2 = buckets.PaletteHsv().ToList();
-
-                List<IMagickColor<byte>> palette2 = [];
-                
-                foreach (var color in colors2)
-                {
-                    var b = new Unicolour(ColourSpace.Hsb, color.H * 360, color.S, color.V).Rgb.Byte255;
-                    palette2.Add(new MagickColor((byte)b.R, (byte)b.G, (byte)b.B));
-                }
-
-                using MagickImage bins = Format.AsPng2(palette2);
-                bins.Write(Console.OpenStandardOutput());
-                return;
-            }
-
-            using MagickImage paletteImage = Format.AsPng(palette);
-
-            if (opts.RemapImage && opts.PrintImage)
-            {
-                var settings = new QuantizeSettings();
-                settings.ColorSpace = ColorSpace.Lab;
-                settings.DitherMethod = DitherMethod.FloydSteinberg;
-                originalImage.Remap(palette, settings);
-                originalImage.Write(Console.OpenStandardOutput());
-                return;
-            }
-
-            if (opts.PrintImage)
-            {
-                paletteImage.Write(Console.OpenStandardOutput());
-            }
-            else
-            {
-                paletteImage.Write(opts.OutputFile);
-            }
-        }
+        Output.Write(palette, opts, buckets);
     }
 
     public static bool HasErrors(Options opts)
@@ -133,7 +48,7 @@ internal class Program
             Console.WriteLine("Usage: porii [InputFile] [Flags]");
             hasErrors = true;
         }
-        else if (opts.Print == false && opts.PrintImage == false && string.IsNullOrEmpty(opts.OutputFile))
+        else if (!opts.Print && !opts.PrintImage && string.IsNullOrEmpty(opts.OutputFile))
         {
             Console.WriteLine("Missing output file specified with -o [Filepath]");
             hasErrors = true;
@@ -146,6 +61,11 @@ internal class Program
         else if (opts.ResizePercentage > 100 || opts.ResizePercentage <= 0)
         {
             Console.WriteLine($"-r value must be between 0 and 100");
+            hasErrors = true;
+        }
+        else if (opts.RemapImage && !opts.PrintImage && string.IsNullOrEmpty(opts.OutputFile))
+        {
+            Console.WriteLine($"Please specify -o or -p argument for map subcommand.");
             hasErrors = true;
         }
 
@@ -206,7 +126,7 @@ internal class Program
             {
                 using IMagickImage<byte> sampled = inputImage.Clone();
                 sampled.Sample(new Percentage(opts.ResizePercentage));
-                GeneratePalette(opts, sampled, largePixelCount, buckets, inputImage);
+                GeneratePalette(opts, sampled, largePixelCount, buckets);
             }
             else
             {

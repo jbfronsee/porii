@@ -1,8 +1,17 @@
 # Introduction
 
+```
+                  _ _ 
+ _ __   ___  _ __(_|_)
+| '_ \ / _ \| '__| | |
+| |_) | (_) | |  | | |
+| .__/ \___/|_|  |_|_|
+|_| 
+```
+
 `porii` generates a palette from a JPG or PNG image using Magick.NET
 and Unicolour. It can output to PNG for visualization and sampling or GPL
-format for importing into GIMP or Krita.
+format for importing into GIMP or Krita. With the `map` subcommand it will also remap the palette from an image onto another image using dithering methods.
 
 # How to Build and Run
 
@@ -20,14 +29,21 @@ hexadecimal color values. It is generated with two steps. First it builds a
 histogram of colors from the image. Afterwards it runs K-means clustering using 
 the histogram as seed values.
 
-|Argument|Description|Destination|
-|--------|-----------|-----------|
-|`-g`|Outputs the palette as a GPL palette file.|Yes|
-|`-h`|Only uses a histogram for generating the palette.|No|
-|`-o`|Outputs the palette file as an image to a destination.|Yes|
-|`-p`|Prints the palette as binary PNG image data to standard output.|No|
-|`-r`|Resizes the image by a percentage before generating the palette.|No|
-|`-v`|Verbose printing.|No|
+|Argument|Description|Operand|Example&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+|--------|-----------|-------|-------------------------------------------|
+|`-f`|Sets the filter strength for the histogram based on number of pixels.|low, medium, or high|`-f low`|
+|`-g`|Outputs the palette as a GPL palette file.|No|`-g`|
+|`-h`|Only uses a histogram for generating the palette.|No|`-h`|
+|`-o`|Outputs the palette file as an image to a destination.|Destination File|`-o out.png`|
+|`-p`|Prints the palette as binary PNG image data to standard output.|No|`-p`|
+|`-r`|Resizes the image by a percentage before generating the palette.|Percentage|`-r 75`|
+|`-v`|Verbose printing.|No|`-v`|
+
+# Subcommands
+
+`map` remaps palette onto an image using dithering.
+
+`porii map palette.png image.png -o out.png`
 
 # Examples
 
@@ -42,3 +58,17 @@ the histogram as seed values.
 `porii Portrait.png -o Palette.png`
 
 <img width="512" height="128" alt="portrait-palette" src="https://github.com/user-attachments/assets/85e8c48c-b76b-4151-a8d9-b12f9bed774c" />
+
+### Map Subcommand
+
+`porii map palette.png lorikeet.jpg -o result.png`
+
+lorikeet.jpg
+
+<img width="480" height="720" alt="result" src="https://github.com/user-attachments/assets/e7e8ddfd-0df6-4553-ba87-bf11ebca16a8" />
+
+result.png
+
+<img width="480" height="720" alt="result" src="https://github.com/user-attachments/assets/5271dabc-dd56-428a-9e73-c90ec729d08c" />
+
+"Rainbow_lorikeet.jpg" by Fir0002/Flagstaffotos is licensed under CC BY-NC. https://en.wikipedia.org/wiki/File:Rainbow_lorikeet.jpg

@@ -4,7 +4,7 @@ using App.Core;
 
 namespace App.Io;
 
-public class Config
+public static class Config
 {
     private const string Buckets = "Buckets";
 
@@ -22,7 +22,7 @@ public class Config
 
     public static Buckets GetBuckets(IConfigurationRoot config)
     {
-        var bucketsConfig = config.GetSection("Buckets");
+        var bucketsConfig = config.GetSection(Buckets);
         Buckets buckets = new()
         {
             SaturatedHues = bucketsConfig.GetSection(Saturated).GetSection(Hues).Get<List<double>>() ?? [],
