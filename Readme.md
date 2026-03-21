@@ -29,8 +29,8 @@ hexadecimal color values. It is generated with two steps. First it builds a
 histogram of colors from the image. Afterwards it runs K-means clustering using 
 the histogram as seed values.
 
-|Argument|Description|Operand|Example|
-|--------|-----------|-------|-------|
+|Argument|Description|Operand|Example&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+|--------|-----------|-------|-------------------------------------------|
 |`-f`|Sets the filter strength for the histogram based on number of pixels.|low, medium, or high|`-f low`|
 |`-g`|Outputs the palette as a GPL palette file.|No|`-g`|
 |`-h`|Only uses a histogram for generating the palette.|No|`-h`|
