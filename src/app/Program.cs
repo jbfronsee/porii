@@ -32,9 +32,10 @@ internal class Program
         {
             // TODO Lab vs RGB
             palette = [.. histogram.Results
-                .OrderByDescending(r => r.Count)
+                .Zip(histogram.Colormap.Keys)
+                .OrderByDescending(z => z.First.Count)
                 .Take(16)
-                .Select(e => Colors.Convert.ToHsv(e.Bucket))
+                .Select(z => Colors.Convert.ToHsv(z.Second))
                 .OrderBy(c => c)
                 .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
             ];
