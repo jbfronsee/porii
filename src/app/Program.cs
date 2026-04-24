@@ -26,11 +26,27 @@ internal class Program
     {
         IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
         
-        List<IMagickColor<byte>> palette = [.. histogram.FilteredPalette(opts.FilterLevel)
-            .Select(Colors.Convert.ToHsv)
-            .OrderBy(c => c)
-            .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
-        ];
+        //TODO zero colors
+        List<IMagickColor<byte>> palette = [];
+        if (histogram.Colormap.Count <= 256)
+        {
+            // TODO Lab vs RGB
+            palette = [.. histogram.Results
+                .OrderByDescending(r => r.Count)
+                .Take(16)
+                .Select(e => Colors.Convert.ToHsv(e.Bucket))
+                .OrderBy(c => c)
+                .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
+            ];
+        }
+        else
+        {
+            palette = [.. histogram.FilteredPalette(opts.FilterLevel)
+                .Select(Colors.Convert.ToHsv)
+                .OrderBy(c => c)
+                .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
+            ];
+        }
 
         if (!opts.HistogramOnly)
         {

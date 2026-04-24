@@ -19,7 +19,7 @@ public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T, U>
     where T: class, IEntry<U, T>
     where U: IColorVector<double>, IEquatable<U>
 {
-    protected const int BucketCount = 256;
+    protected const int DefaultBucketCount = 256;
 
     protected const double OriginalEpsilonResolution = 1920 * 1080;
 
@@ -29,7 +29,7 @@ public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T, U>
 
     protected const double HighEpsilon = 2.0e-1 / OriginalEpsilonResolution;
 
-    public override T[] Clusters { get; set; } = new T[BucketCount];
+    public override T[] Clusters { get; set; } = new T[DefaultBucketCount];
 
     public T[] Results => Clusters;
 
