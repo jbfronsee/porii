@@ -1,5 +1,4 @@
 ﻿using ImageMagick;
-using ImageMagick.Colors;
 using Microsoft.Extensions.Configuration;
 
 using App.Core;
@@ -31,22 +30,15 @@ internal class Program
         if (histogram.Colormap.Count <= 256)
         {
             // TODO Lab vs RGB
-            palette = [.. histogram.Results
+            palette = Colors.MagickSorting.SortByHsv(histogram.Results
                 .Zip(histogram.Colormap.Keys)
                 .OrderByDescending(z => z.First.Count)
                 .Take(16)
-                .Select(z => Colors.Convert.ToHsv(z.Second))
-                .OrderBy(c => c)
-                .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
-            ];
+                .Select(z => z.Second));
         }
         else
         {
-            palette = [.. histogram.FilteredPalette(opts.FilterLevel)
-                .Select(Colors.Convert.ToHsv)
-                .OrderBy(c => c)
-                .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
-            ];
+            palette = Colors.MagickSorting.SortByHsv(histogram.FilteredPalette(opts.FilterLevel));
         }
 
         if (!opts.HistogramOnly)
