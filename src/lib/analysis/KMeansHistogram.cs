@@ -35,13 +35,13 @@ public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T, U>
 
     public int TotalPixelsCounted { get; set; } = 0;
 
-    public void CalculateHistogram(ColorRgb[] pixels)
+    public virtual void CalculateHistogram(ColorRgb[] pixels)
     {
         TotalPixelsCounted = pixels.Length;
         Cluster(pixels);
     }
 
-    public void CalculateHistogramParallel(ColorRgb[] pixels)
+    public virtual void CalculateHistogramParallel(ColorRgb[] pixels)
     {
         TotalPixelsCounted = pixels.Length;
         ClusterParallel(pixels);
@@ -75,18 +75,18 @@ public abstract class KMeansHistogram<T, U>: KMeans<T, U>, IHistogram<T, U>
         };
     }
 
-    public List<T> UniqueEntries()
+    public virtual List<T> UniqueEntries()
     {
         return UniqueEntries(Results);
     }
 
-    public List<T> FilteredEntries(FilterStrength strength = FilterStrength.Medium)
+    public virtual List<T> FilteredEntries(FilterStrength strength = FilterStrength.Medium)
     {
         T[] largeValues = [.. Results.Where(e => e.Count > (TotalPixelsCounted * GetFilterEpsilon(strength)))];
         return UniqueEntries(largeValues);
     }
 
-    public List<U> FilteredPalette(FilterStrength strength = FilterStrength.Medium)
+    public virtual List<U> FilteredPalette(FilterStrength strength = FilterStrength.Medium)
     {
         List<U> filtered = [.. FilteredEntries(strength)
             .DistinctBy(e => e.Mean)
@@ -128,8 +128,12 @@ public class KMeansHistogramLab : KMeansHistogram<EntryLab, VectorLab>, IHistogr
     public KMeansHistogramLab(Dictionary<ColorRgb, PackedLab> colormap)
     {
         Colormap = colormap;
+        if (Colormap.Count <= 256)
+        {
+            Clusters = new EntryLab[colormap.Count];
+        }
     }
-
+    
     protected override VectorLab UnpackPixel(ColorRgb pixel)
     {
         return Colormap[pixel].Unpack();

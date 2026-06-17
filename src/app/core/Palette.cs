@@ -29,26 +29,12 @@ public static class Palette
     {
         KMeansHistogramLab histogram = new(colormap);
 
-        IEnumerable<VectorLab> histBuckets = [];
-        if (colormap.Count <= 256)
+        IEnumerable<VectorLab> histBuckets = colormap.Count switch
         {
-            histBuckets = colormap.Select(c => Colors.Convert.ToLab(c.Key));
-            //TODO move to histogram
-            histogram.Clusters = new EntryLab[colormap.Count];
-        }
-        else
-        {
-            histBuckets = buckets.PaletteLab();
-        }
-
-        int j = 0;
-        foreach (var bucket in histBuckets)
-        {
-            VectorLab labBucket = bucket;
-            EntryLab entry = new(labBucket, labBucket, 0);
-            histogram.Clusters[j] = entry;
-            j++;
-        }
+            <= 256 => colormap.Select(c => Colors.Convert.ToLab(c.Key)),
+            _ => buckets.PaletteLab()
+        };
+        histogram.Clusters = [.. histBuckets.Select(v => new EntryLab(v, v, 0))];
 
         histogram.CalculateHistogram(pixels);
 

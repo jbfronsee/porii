@@ -21,32 +21,39 @@ internal class Program
         }
     }
 
-    public static void GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets)
+    public static List<IMagickColor<byte>> GetHistogramPalette(Options opts, IHistogramLab histogram)
     {
-        IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
-        
-        //TODO zero colors
-        List<IMagickColor<byte>> palette = [];
-        if (histogram.Colormap.Count <= 256)
+        return histogram.Colormap.Count switch
         {
-            // TODO Lab vs RGB
-            palette = Colors.MagickSorting.SortByHsv(histogram.Results
+            <= 16 => Colors.MagickSorting.SortByHsv(histogram.Colormap.Keys),
+            <= 256 => Colors.MagickSorting.SortByHsv(histogram.Results
                 .Zip(histogram.Colormap.Keys)
                 .OrderByDescending(z => z.First.Count)
                 .Take(16)
-                .Select(z => z.Second));
-        }
-        else
-        {
-            palette = Colors.MagickSorting.SortByHsv(histogram.FilteredPalette(opts.FilterLevel));
-        }
+                .Select(z => z.Second)),
+            _ => Colors.MagickSorting.SortByHsv(histogram.FilteredPalette(opts.FilterLevel))
+        };
+    }
 
-        if (!opts.HistogramOnly)
+    public static void GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets)
+    {
+        IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
+        List<IMagickColor<byte>> palette = GetHistogramPalette(opts, histogram);
+
+        bool histOnly = opts.HistogramOnly || histogram.Colormap.Count <= 16;
+        if (!histOnly)
         {
             palette = Palette.FromImage(image, palette, largePixelCount, histogram.Colormap, opts.Verbose || opts.Print);
         }
 
-        Output.Write(palette, opts, buckets);
+        if (palette.Count == 0)
+        {
+            Console.WriteLine($"No colors detected in {opts.InputFile}");
+        }
+        else
+        {
+            Output.Write(palette, opts, buckets);
+        }
     }
 
     public static bool HasErrors(Options opts)
