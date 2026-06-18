@@ -1,5 +1,4 @@
 ﻿using ImageMagick;
-using ImageMagick.Colors;
 using Microsoft.Extensions.Configuration;
 
 using App.Core;
@@ -22,22 +21,39 @@ internal class Program
         }
     }
 
+    public static List<IMagickColor<byte>> GetHistogramPalette(Options opts, IHistogramLab histogram)
+    {
+        return histogram.Colormap.Count switch
+        {
+            <= 16 => Colors.MagickSorting.SortByHsv(histogram.Colormap.Keys),
+            <= 256 => Colors.MagickSorting.SortByHsv(histogram.Results
+                .Zip(histogram.Colormap.Keys)
+                .OrderByDescending(z => z.First.Count)
+                .Take(16)
+                .Select(z => z.Second)),
+            _ => Colors.MagickSorting.SortByHsv(histogram.FilteredPalette(opts.FilterLevel))
+        };
+    }
+
     public static void GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets)
     {
         IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
-        
-        List<IMagickColor<byte>> palette = [.. histogram.FilteredPalette(opts.FilterLevel)
-            .Select(Colors.Convert.ToHsv)
-            .OrderBy(c => c)
-            .Select(c => new ColorHSV(c.H, c.S, c.V).ToMagickColor())
-        ];
+        List<IMagickColor<byte>> palette = GetHistogramPalette(opts, histogram);
 
-        if (!opts.HistogramOnly)
+        bool histOnly = opts.HistogramOnly || histogram.Colormap.Count <= 16;
+        if (!histOnly)
         {
             palette = Palette.FromImage(image, palette, largePixelCount, histogram.Colormap, opts.Verbose || opts.Print);
         }
 
-        Output.Write(palette, opts, buckets);
+        if (palette.Count == 0)
+        {
+            Console.WriteLine($"No colors detected in {opts.InputFile}");
+        }
+        else
+        {
+            Output.Write(palette, opts, buckets);
+        }
     }
 
     public static bool HasErrors(Options opts)

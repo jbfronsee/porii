@@ -29,14 +29,12 @@ public static class Palette
     {
         KMeansHistogramLab histogram = new(colormap);
 
-        int j = 0;
-        foreach (var bucket in buckets.PaletteLab())
+        IEnumerable<VectorLab> histBuckets = colormap.Count switch
         {
-            VectorLab labBucket = bucket;
-            EntryLab entry = new(labBucket, labBucket, 0);
-            histogram.Results[j] = entry;
-            j++;
-        }
+            <= 256 => colormap.Select(c => Colors.Convert.ToLab(c.Key)),
+            _ => buckets.PaletteLab()
+        };
+        histogram.Clusters = [.. histBuckets.Select(v => new EntryLab(v, v, 0))];
 
         histogram.CalculateHistogram(pixels);
 
@@ -112,10 +110,7 @@ public static class Palette
             Format.WriteLineIf(verbose, $"{index}");
         }
 
-        List<ColorHsv> palette = kmeans.Clusters.Select(c => Colors.Convert.ToHsv(c.Mean)).ToList();
-        palette.Sort();
-        
-        return palette.Select(Colors.Convert.ToMagickColor).ToList();
+        return Colors.MagickSorting.SortByHsv(kmeans.Clusters.Select(c => c.Mean));
     }
 
     /// <summary>
