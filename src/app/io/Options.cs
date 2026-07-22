@@ -72,7 +72,7 @@ public class Options
             default:
                 if (!IsPairFlag(flag))
                 {
-                    mInvalidArg = $"-{flag} is not a flag.";
+                    mInvalidArg = $"-{flag} is not a flag";
                 }
                 break;
         }
@@ -82,7 +82,7 @@ public class Options
     {
         if (IsFlag(arg) || string.IsNullOrEmpty(arg))
         {
-            mInvalidArg = $"Missing operand for {flag}.";
+            mInvalidArg = $"Missing operand for {flag}";
             return;
         }
 
@@ -95,7 +95,7 @@ public class Options
                 }
                 else
                 {
-                    mInvalidArg = $"{arg} is not a filter strength.";
+                    mInvalidArg = $"{arg} is not a filter strength";
                     return;
                 }
                 break;
@@ -109,7 +109,7 @@ public class Options
                 }
                 else
                 {
-                    mInvalidArg = $"{arg} is not a percentage.";
+                    mInvalidArg = $"{arg} is not a percentage";
                     return;
                 }
                 break;
