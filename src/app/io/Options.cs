@@ -80,7 +80,7 @@ public class Options
 
     private void HandlePairFlag(char flag, string arg)
     {
-        if (IsFlag(arg) || string.IsNullOrEmpty(arg))
+        if (string.IsNullOrEmpty(arg) || (flag == 'o' && IsFlag(arg)))
         {
             mInvalidArg = $"Missing operand for {flag}";
             return;
