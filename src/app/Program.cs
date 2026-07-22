@@ -56,38 +56,6 @@ internal class Program
         }
     }
 
-    public static bool HasErrors(Options opts)
-    {
-        bool hasErrors = false;
-        if (string.IsNullOrEmpty(opts.InputFile))
-        {
-            Console.WriteLine("Usage: porii [InputFile] [Flags]");
-            hasErrors = true;
-        }
-        else if (!opts.Print && !opts.PrintImage && string.IsNullOrEmpty(opts.OutputFile))
-        {
-            Console.WriteLine("Missing output file specified with -o [Filepath]");
-            hasErrors = true;
-        }
-        else if (!string.IsNullOrEmpty(opts.InvalidArg))
-        {
-            Console.WriteLine($"Invalid Argument: {opts.InvalidArg}");
-            hasErrors = true;
-        }
-        else if (opts.ResizePercentage > 100 || opts.ResizePercentage <= 0)
-        {
-            Console.WriteLine($"-r value must be between 0 and 100");
-            hasErrors = true;
-        }
-        else if (opts.RemapImage && !opts.PrintImage && string.IsNullOrEmpty(opts.OutputFile))
-        {
-            Console.WriteLine($"Please specify -o or -p argument for map subcommand.");
-            hasErrors = true;
-        }
-
-        return hasErrors;
-    }
-
     public static (Buckets, string) ReadBuckets(IConfigurationRoot config, bool verbose)
     {
         Buckets buckets = Config.GetBuckets(config);
@@ -106,7 +74,7 @@ internal class Program
     {
         Options opts = Options.GetOptions(args);
 
-        if (HasErrors(opts))
+        if (Help.PrintOptionErrors(opts))
         {
             return;
         }
