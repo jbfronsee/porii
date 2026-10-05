@@ -5,17 +5,15 @@ namespace App.Io;
 
 public static class Format
 {
+    public const string GplHeader = "GIMP Palette";
+
+    public const string GplName = "Name:";
+
+    public const string GplColumns = "Columns:";
+
     private static readonly string mLineSeparator = new('-', 60);
     
     public static string LineSeparator => mLineSeparator;
-
-    public static void WriteLineIf(bool condition, string message)
-    {
-        if (condition)
-        {
-            Console.WriteLine(message);
-        }
-    }
     
     /// <summary>
     /// Formats palette as a GPL file for importing into software like GIMP and Krita.
@@ -28,9 +26,9 @@ public static class Format
         // Header
         List<string> gplLines =
         [
-            "GIMP Palette",
-            $"Name: {name}",
-            $"Columns: 8",
+            GplHeader,
+            $"{GplName} {name}",
+            $"{GplColumns} 8",
             "#"
         ];
 
@@ -107,5 +105,63 @@ public static class Format
         canvas.Draw(image);
         image.Format = MagickFormat.Png;
         return image;
+    }
+
+    public static IMagickColor<byte>? ParseColorGpl(string gplLine)
+    {
+        IMagickColor<byte>? result = null;
+
+        List<string> rgb = [.. gplLine.Split(" ").Take(3)];
+
+        if (rgb.Count != 3)
+        {
+            return result;
+        }
+
+        if (byte.TryParse(rgb[0], out byte r) && 
+            byte.TryParse(rgb[1], out byte g) && 
+            byte.TryParse(rgb[2], out byte b))
+        {
+            result = new MagickColor(r, g, b);
+        }
+
+        return result;
+    }
+
+    public static List<IMagickColor<byte>> FromGpl(IEnumerable<string> lines)
+    {
+        List<IMagickColor<byte>> palette = [];
+
+        bool valid = false;
+        foreach(string line in lines)
+        {
+            if (!valid)
+            {
+                if (line == GplHeader)
+                {
+                    valid = true;
+                }
+                else
+                {
+                    return [];
+                }
+            }
+
+            if (!line.StartsWith(GplName) &&
+                !line.StartsWith(GplColumns) &&
+                !line.StartsWith("#") &&
+                !string.IsNullOrEmpty(line))
+            {
+                IMagickColor<byte>? color = ParseColorGpl(line);
+                if (color is null)
+                {
+                    return [];
+                }
+
+                palette.Add(color);
+            }
+        }
+
+        return palette;
     }
 }
