@@ -107,6 +107,13 @@ public static class Format
         return image;
     }
 
+    /// <summary>
+    /// Determines if a line is a GplColorLine or one of the ignored lines.
+    /// https://developer.gimp.org/core/standards/gpl/
+    /// 
+    /// </summary>
+    /// <param name="line">Line to validate</param>
+    /// <returns>True if line is a color line false if it is one of the ignored lines</returns>
     public static bool IsGplColorLine(string line) =>
             line != GplHeader &&
             !line.StartsWith(GplName) &&
@@ -114,6 +121,12 @@ public static class Format
             !line.StartsWith("#") &&
             !string.IsNullOrEmpty(line);
 
+
+    /// <summary>
+    ///  Parse Color from a GPL color line.
+    /// </summary>
+    /// <param name="gplLine">Color line to parse from</param>
+    /// <returns>null if failure and MagickColor if success</returns>
     public static IMagickColor<byte>? ParseColorGpl(string gplLine)
     {
         IMagickColor<byte>? result = null;
@@ -135,25 +148,25 @@ public static class Format
         return result;
     }
 
+    /// <summary>
+    /// Parse a palette from a GPL file.
+    /// </summary>
+    /// <param name="lines">The string enumerable which is the GPL file lines</param>
+    /// <returns>Empty palette if failure and parsed palette on success</returns>
     public static List<IMagickColor<byte>> FromGpl(IEnumerable<string> lines)
     {
         List<IMagickColor<byte>> palette = [];
 
-        bool valid = false;
+        bool first = true;
         foreach(string line in lines)
         {
-            if (!valid)
+            if (first && (line != GplHeader))
             {
-                if (line == GplHeader)
-                {
-                    valid = true;
-                }
-                else
-                {
-                    return [];
-                }
+                return [];
             }
-            else if (IsGplColorLine(line))
+
+            first = false;
+            if (IsGplColorLine(line))
             {
                 IMagickColor<byte>? color = ParseColorGpl(line);
                 if (color is null)
