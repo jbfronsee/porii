@@ -107,11 +107,18 @@ public static class Format
         return image;
     }
 
+    public static bool IsGplColorLine(string line) =>
+            line != GplHeader &&
+            !line.StartsWith(GplName) &&
+            !line.StartsWith(GplColumns) &&
+            !line.StartsWith("#") &&
+            !string.IsNullOrEmpty(line);
+
     public static IMagickColor<byte>? ParseColorGpl(string gplLine)
     {
         IMagickColor<byte>? result = null;
 
-        List<string> rgb = [.. gplLine.Split(" ").Take(3)];
+        List<string> rgb = [.. gplLine.Split(" ", StringSplitOptions.RemoveEmptyEntries).Take(3)];
 
         if (rgb.Count != 3)
         {
@@ -146,11 +153,7 @@ public static class Format
                     return [];
                 }
             }
-
-            if (!line.StartsWith(GplName) &&
-                !line.StartsWith(GplColumns) &&
-                !line.StartsWith("#") &&
-                !string.IsNullOrEmpty(line))
+            else if (IsGplColorLine(line))
             {
                 IMagickColor<byte>? color = ParseColorGpl(line);
                 if (color is null)
