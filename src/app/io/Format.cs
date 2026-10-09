@@ -126,26 +126,19 @@ public static class Format
     ///  Parse Color from a GPL color line.
     /// </summary>
     /// <param name="gplLine">Color line to parse from</param>
-    /// <returns>null if failure and MagickColor if success</returns>
-    public static IMagickColor<byte>? ParseColorGpl(string gplLine)
+    /// <returns>MagickColor if success</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if there are not 3 rgb values detected.</exception>
+    /// <exception cref="FormatException">Thrown by byte.Parse</exception>
+    /// <exception cref="OverflowException">Thrown by byte.Parse</exception>
+    public static IMagickColor<byte> ParseColorGpl(string gplLine)
     {
-        IMagickColor<byte>? result = null;
+        List<string> rgb = [.. gplLine.Split(null as char[], StringSplitOptions.RemoveEmptyEntries).Take(3)];
 
-        List<string> rgb = [.. gplLine.Split(" ", StringSplitOptions.RemoveEmptyEntries).Take(3)];
+        byte r = byte.Parse(rgb[0]);
+        byte g = byte.Parse(rgb[1]);
+        byte b = byte.Parse(rgb[2]);
 
-        if (rgb.Count != 3)
-        {
-            return result;
-        }
-
-        if (byte.TryParse(rgb[0], out byte r) && 
-            byte.TryParse(rgb[1], out byte g) && 
-            byte.TryParse(rgb[2], out byte b))
-        {
-            result = new MagickColor(r, g, b);
-        }
-
-        return result;
+        return new MagickColor(r, g, b);
     }
 
     /// <summary>
@@ -153,6 +146,9 @@ public static class Format
     /// </summary>
     /// <param name="lines">The string enumerable which is the GPL file lines</param>
     /// <returns>Empty palette if failure and parsed palette on success</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if there are not 3 rgb values detected.</exception>
+    /// <exception cref="FormatException">Thrown by byte.Parse</exception>
+    /// <exception cref="OverflowException">Thrown by byte.Parse</exception>
     public static List<IMagickColor<byte>> FromGpl(IEnumerable<string> lines)
     {
         List<IMagickColor<byte>> palette = [];
@@ -168,13 +164,7 @@ public static class Format
             first = false;
             if (IsGplColorLine(line))
             {
-                IMagickColor<byte>? color = ParseColorGpl(line);
-                if (color is null)
-                {
-                    return [];
-                }
-
-                palette.Add(color);
+                palette.Add(ParseColorGpl(line));
             }
         }
 

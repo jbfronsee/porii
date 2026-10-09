@@ -49,14 +49,43 @@ public sealed class TestFormatGpl
         Assert.AreEqual(expected, actual);
     }
 
+
     [TestMethod]
     [TestCategory("IntegrationTest")]
     [TestCategory("FastIntegration")]
-    public void Test_Parse_Color_Gpl_Invalid()
+    public void Test_Parse_Color_Gpl_Tab()
     {
-        IMagickColor<byte>? color = Format.ParseColorGpl("238 242");
+        (byte, byte, byte) expected = (238, 242, 13);
 
-        Assert.IsNull(color);
+        IMagickColor<byte>? color = Format.ParseColorGpl("238 242 13\tYellow");
+
+        var actual = (color?.R, color?.G, color?.B);
+
+        Assert.AreEqual(expected, actual);
+    }
+
+    [TestMethod]
+    [TestCategory("IntegrationTest")]
+    [TestCategory("FastIntegration")]
+    public void Test_Parse_Color_Gpl_Arguments()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Format.ParseColorGpl("238 242"));
+    }
+
+    [TestMethod]
+    [TestCategory("IntegrationTest")]
+    [TestCategory("FastIntegration")]
+    public void Test_Parse_Color_Gpl_Format()
+    {
+        Assert.Throws<FormatException>(() => Format.ParseColorGpl("238 242 2d2"));
+    }
+
+    [TestMethod]
+    [TestCategory("IntegrationTest")]
+    [TestCategory("FastIntegration")]
+    public void Test_Parse_Color_Gpl_Overflow()
+    {
+        Assert.Throws<OverflowException>(() => Format.ParseColorGpl("238 242 3000"));
     }
 
     [TestMethod]
@@ -88,10 +117,6 @@ public sealed class TestFormatGpl
     [TestCategory("FastIntegration")]
     public void Test_From_Gpl_Invalid_Not_Byte()
     {
-        List<(byte, byte, byte)> expected = [];
-        
-        List<(byte, byte, byte)> actual = [.. Format.FromGpl(InvalidGplLinesNotByte).Select(c => (c.R, c.G, c.B))];
-
-        CollectionAssert.AreEqual(expected, actual);
+        Assert.Throws<Exception>(() => Format.FromGpl(InvalidGplLinesNotByte));
     }
 }
