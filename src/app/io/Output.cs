@@ -72,4 +72,12 @@ public static class Output
             OutputImage(paletteImage, opts);
         }
     }
+
+    public static void WriteLineIf(bool condition, string message)
+    {
+        if (condition)
+        {
+            Console.WriteLine(message);
+        }
+    }
 }

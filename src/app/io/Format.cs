@@ -5,17 +5,15 @@ namespace App.Io;
 
 public static class Format
 {
+    public const string GplHeader = "GIMP Palette";
+
+    public const string GplName = "Name:";
+
+    public const string GplColumns = "Columns:";
+
     private static readonly string mLineSeparator = new('-', 60);
     
     public static string LineSeparator => mLineSeparator;
-
-    public static void WriteLineIf(bool condition, string message)
-    {
-        if (condition)
-        {
-            Console.WriteLine(message);
-        }
-    }
     
     /// <summary>
     /// Formats palette as a GPL file for importing into software like GIMP and Krita.
@@ -28,9 +26,9 @@ public static class Format
         // Header
         List<string> gplLines =
         [
-            "GIMP Palette",
-            $"Name: {name}",
-            $"Columns: 8",
+            GplHeader,
+            $"{GplName} {name}",
+            $"{GplColumns} 8",
             "#"
         ];
 
@@ -107,5 +105,69 @@ public static class Format
         canvas.Draw(image);
         image.Format = MagickFormat.Png;
         return image;
+    }
+
+    /// <summary>
+    /// Determines if a line is a GplColorLine or one of the ignored lines.
+    /// https://developer.gimp.org/core/standards/gpl/
+    /// 
+    /// </summary>
+    /// <param name="line">Line to validate</param>
+    /// <returns>True if line is a color line false if it is one of the ignored lines</returns>
+    public static bool IsGplColorLine(string line) =>
+            line != GplHeader &&
+            !line.StartsWith(GplName) &&
+            !line.StartsWith(GplColumns) &&
+            !line.StartsWith("#") &&
+            !string.IsNullOrEmpty(line);
+
+
+    /// <summary>
+    ///  Parse Color from a GPL color line.
+    /// </summary>
+    /// <param name="gplLine">Color line to parse from</param>
+    /// <returns>MagickColor if success</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if there are not 3 rgb values detected.</exception>
+    /// <exception cref="FormatException">Thrown by byte.Parse</exception>
+    /// <exception cref="OverflowException">Thrown by byte.Parse</exception>
+    public static IMagickColor<byte> ParseColorGpl(string gplLine)
+    {
+        List<string> rgb = [.. gplLine.Split(null as char[], StringSplitOptions.RemoveEmptyEntries).Take(3)];
+
+        byte r = byte.Parse(rgb[0]);
+        byte g = byte.Parse(rgb[1]);
+        byte b = byte.Parse(rgb[2]);
+
+        return new MagickColor(r, g, b);
+    }
+
+    /// <summary>
+    /// Parse a palette from a GPL file.
+    /// </summary>
+    /// <param name="lines">The string enumerable which is the GPL file lines</param>
+    /// <returns>Empty palette if failure and parsed palette on success</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if there are not 3 rgb values detected.</exception>
+    /// <exception cref="FormatException">Thrown by byte.Parse</exception>
+    /// <exception cref="OverflowException">Thrown by byte.Parse</exception>
+    public static List<IMagickColor<byte>> FromGpl(IEnumerable<string> lines)
+    {
+        List<IMagickColor<byte>> palette = [];
+
+        bool first = true;
+        foreach(string line in lines)
+        {
+            if (first && (line != GplHeader))
+            {
+                return [];
+            }
+
+            first = false;
+            if (IsGplColorLine(line))
+            {
+                palette.Add(ParseColorGpl(line));
+            }
+        }
+
+        return palette;
     }
 }

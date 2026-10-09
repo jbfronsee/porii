@@ -35,7 +35,7 @@ internal class Program
         };
     }
 
-    public static void GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets)
+    public static List<IMagickColor<byte>> GeneratePalette(Options opts, IMagickImage<byte> image, double largePixelCount, Buckets buckets)
     {
         IHistogramLab histogram = Palette.CalculateHistogramFromSample(image, buckets);
         List<IMagickColor<byte>> palette = GetHistogramPalette(opts, histogram);
@@ -46,14 +46,7 @@ internal class Program
             palette = Palette.FromImage(image, palette, largePixelCount, histogram.Colormap, opts.Verbose || opts.Print);
         }
 
-        if (palette.Count == 0)
-        {
-            Console.WriteLine($"No colors detected in {opts.InputFile}");
-        }
-        else
-        {
-            Output.Write(palette, opts, buckets);
-        }
+        return palette;
     }
 
     public static (Buckets, string) ReadBuckets(IConfigurationRoot config, bool verbose)
@@ -68,6 +61,69 @@ internal class Program
         }
 
         return (buckets, "");
+    }
+
+    public static IMagickImage<byte> ReadImage(Options opts)
+    {
+        MagickImage inputImage = new(opts.InputFile);
+
+        if (opts.Print || opts.Verbose)
+        {
+            Console.WriteLine("Processing Image...");
+            Console.WriteLine(Format.LineSeparator);
+        }
+
+        inputImage.Settings.BackgroundColor = MagickColors.White;
+        inputImage.Alpha(AlphaOption.Remove);
+
+        if ( opts.ResizePercentage < 100 && opts.ResizePercentage > 0)
+        {
+            inputImage.Sample(new Percentage(opts.ResizePercentage));
+        }
+        
+        return inputImage;
+    }
+
+    public static List<IMagickColor<byte>> ReadPaletteFromGpl(Options opts)
+    {
+        List<IMagickColor<byte>> palette = [];
+        
+        try 
+        {
+            palette = Format.FromGpl(File.ReadLines(opts.InputFile));
+        }
+        catch (ArgumentOutOfRangeException aoore)
+        {
+            HandleException(aoore, "The gpl file does not have full rgb specified.", opts.Verbose);
+        }
+        catch (FormatException fe)
+        {
+            HandleException(fe, "The gpl file has incorrect formatting of color values.", opts.Verbose);
+        }
+        catch (OverflowException oe)
+        {
+            HandleException(oe, "The gpl file color values should be between 0 and 255.", opts.Verbose);
+        }
+
+        return palette;
+    }
+
+    public static List<IMagickColor<byte>> ReadPaletteFromImage(Options opts, double largePixelCount, Buckets buckets)
+    {
+        using IMagickImage<byte> inputImage = ReadImage(opts);
+        return GeneratePalette(opts, inputImage, largePixelCount, buckets);
+    }
+
+    public static void WritePalette(Options opts, List<IMagickColor<byte>> palette, Buckets buckets)
+    {
+        if (palette.Count == 0)
+        {
+            Console.WriteLine($"No colors detected in {opts.InputFile}");
+        }
+        else
+        {
+            Output.Write(palette, opts, buckets);
+        }
     }
 
     private static void Main(string[] args)
@@ -94,28 +150,14 @@ internal class Program
             }
 
             double largePixelCount = sampleX * sampleY;
-            
-            using MagickImage inputImage = new(opts.InputFile);
-
-            if (opts.Print || opts.Verbose)
+            string extension = Path.GetExtension(opts.InputFile);
+            List<IMagickColor<byte>> palette = extension switch
             {
-                Console.WriteLine("Processing Image...");
-                Console.WriteLine(Format.LineSeparator);
-            }
+                ".gpl" => ReadPaletteFromGpl(opts),
+                _ => ReadPaletteFromImage(opts, largePixelCount, buckets)
+            };
 
-            inputImage.Settings.BackgroundColor = MagickColors.White;
-            inputImage.Alpha(AlphaOption.Remove);
-
-            if ( opts.ResizePercentage < 100 && opts.ResizePercentage > 0)
-            {
-                using IMagickImage<byte> sampled = inputImage.Clone();
-                sampled.Sample(new Percentage(opts.ResizePercentage));
-                GeneratePalette(opts, sampled, largePixelCount, buckets);
-            }
-            else
-            {
-                GeneratePalette(opts, inputImage, largePixelCount, buckets);
-            }
+            WritePalette(opts, palette, buckets);       
         }
         catch (MagickBlobErrorException mbee)
         {

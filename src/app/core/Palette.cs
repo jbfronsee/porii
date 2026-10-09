@@ -103,11 +103,11 @@ public static class Palette
     { 
         KMeansLab kmeans = new(seeds.Select(Colors.Convert.ToLab).Select(c => new SafeClusterLab(c, c, 0)).ToArray(), colormap);
 
-        Format.WriteLineIf(verbose, $"K-Means Cluster Index: ");
+        Output.WriteLineIf(verbose, $"K-Means Cluster Index: ");
 
         foreach (var index in kmeans.BestClustersWithProgress(pixels, 32, parallelize))
         {
-            Format.WriteLineIf(verbose, $"{index}");
+            Output.WriteLineIf(verbose, $"{index}");
         }
 
         return Colors.MagickSorting.SortByHsv(kmeans.Clusters.Select(c => c.Mean));
